@@ -100,17 +100,28 @@ const App: React.FC = () => {
 
   // Splash screen timeout (only runs when in SPLASH state)
   useEffect(() => {
+    console.log('[App] Current appState:', appState);
     if (appState !== AppState.SPLASH) return;
 
+    console.log('[App] Splash screen started, will check auth in 3 seconds...');
     const splashTimer = setTimeout(async () => {
-      // After splash, check if user is authenticated
-      const session = await authService.getSession();
-      if (session) {
-        // User is authenticated, go to main app
-        setAppState(AppState.MAIN_APP);
-        setCurrentTab('explore'); // Land on explore tab
-      } else {
-        // User is not authenticated, show auth required screen
+      console.log('[App] Splash timer completed, checking authentication...');
+      try {
+        const session = await authService.getSession();
+        console.log('[App] Session check result:', session ? 'Authenticated' : 'Not authenticated');
+        if (session) {
+          // User is authenticated, go to main app
+          console.log('[App] Moving to MAIN_APP state');
+          setAppState(AppState.MAIN_APP);
+          setCurrentTab('explore'); // Land on explore tab
+        } else {
+          // User is not authenticated, show auth required screen
+          console.log('[App] Moving to AUTH_REQUIRED state');
+          setAppState(AppState.AUTH_REQUIRED);
+        }
+      } catch (error) {
+        console.error('[App] Error during splash screen auth check:', error);
+        // On error, show auth required
         setAppState(AppState.AUTH_REQUIRED);
       }
     }, 3000); // 3 second splash
