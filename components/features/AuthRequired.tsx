@@ -15,6 +15,7 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true); // Default to true
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +76,7 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
             Kunajoto
           </h1>
           <p className="text-white/90 font-medium tracking-wide text-sm uppercase mt-1">
-            Your Nightlife Discovery
+            Your Nightlife Vibe Forecast
           </p>
         </div>
 
@@ -168,6 +169,21 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
                 <p className="text-[10px] text-gray-400 mt-1">Minimum 6 characters</p>
               )}
             </div>
+
+            {isLogin && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+                />
+                <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600">
+                  Remember me
+                </label>
+              </div>
+            )}
 
             <button
               type="submit"

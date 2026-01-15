@@ -291,14 +291,30 @@ const App: React.FC = () => {
   }, []);
 
   const handleAuthSuccess = async () => {
+    // Get current session
+    const session = await authService.getSession();
+    if (!session?.user) {
+      console.error('❌ [handleAuthSuccess] No session found');
+      return;
+    }
+    
     setIsAuthenticated(true);
+    setUserId(session.user.id); // FIX: Set userId to prevent ghost user
     
     // Load user data
     const profile = await authService.getUserProfile();
     if (profile) {
-      setUserRole(profile.default_role || 'USER');
-      setUserEmail(profile.email || '');
-      setUserName(profile.full_name || profile.first_name || '');
+      setUserRole(profile.default_role || 'guest');
+      setUserEmail(profile.email || session.user.email || '');
+      setUserName(profile.full_name || profile.first_name || session.user.email?.split('@')[0] || 'User');
+      console.log('✅ [handleAuthSuccess] Profile loaded:', { email: profile.email, name: profile.full_name });
+    } else {
+      // Fallback to session data
+      const email = session.user.email || '';
+      const name = session.user.user_metadata?.full_name || session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User';
+      setUserEmail(email);
+      setUserName(name);
+      console.log('⚠️ [handleAuthSuccess] No profile, using session data:', { email, name });
     }
     
     // Go to main app, landing on explore tab
