@@ -6,7 +6,9 @@ interface AuthRequiredProps {
 }
 
 const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
-  const [isLogin, setIsLogin] = useState(false);
+  // Default to login if user has logged in before (better UX after logout)
+  const hasLoggedInBefore = localStorage.getItem('kunajoto_has_onboarded') === 'true';
+  const [isLogin, setIsLogin] = useState(hasLoggedInBefore);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');

@@ -50,7 +50,9 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
   }, [userId]);
 
   const checkAdminStatus = async () => {
+    console.log('🔐 [AdminDashboard] Checking admin status for userId:', userId);
     const adminStatus = await isUserAppAdmin(userId);
+    console.log('🔐 [AdminDashboard] Admin check result:', adminStatus);
     setIsAdmin(adminStatus);
     setLoading(false);
   };

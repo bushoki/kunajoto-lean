@@ -505,6 +505,7 @@ const App: React.FC = () => {
 
       {appState === AppState.ADMIN_DASHBOARD && (
         <AdminDashboard 
+          userId={userId}
           onClose={() => setAppState(AppState.MAIN_APP)} 
           services={services}
           setServices={setServices}
