@@ -66,18 +66,11 @@ const Profile: React.FC<ProfileProps> = ({
            )}
            <button 
              type="button"
-             onMouseDown={(e) => {
-               e.preventDefault();
-               e.stopPropagation();
-             }}
-             onClick={(e) => {
-               e.preventDefault();
-               e.stopPropagation();
+             onClick={() => {
                console.log('🔴 Logout button clicked');
                onLogout();
              }}
-             style={{ WebkitTapHighlightColor: 'transparent' }}
-             className="text-xs font-bold text-red-400 hover:text-red-300 transition pointer-events-auto px-3 py-2 -mr-2 active:bg-red-900/20 rounded-lg touch-manipulation cursor-pointer select-none"
+             className="text-xs font-bold text-red-400 hover:text-red-300 transition px-3 py-2 -mr-2 active:bg-red-900/20 rounded-lg cursor-pointer"
            >
              <i className="fa-solid fa-right-from-bracket mr-1"></i> Log out
            </button>
