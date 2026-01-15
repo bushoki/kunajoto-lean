@@ -72,7 +72,7 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
             <i className="fa-solid fa-location-dot text-4xl text-white drop-shadow-md"></i>
           </div>
           <h1 className="text-3xl font-black tracking-wider text-white uppercase drop-shadow-sm">
-            Kunajoto Lean
+            Kunajoto
           </h1>
           <p className="text-white/90 font-medium tracking-wide text-sm uppercase mt-1">
             Your Nightlife Discovery

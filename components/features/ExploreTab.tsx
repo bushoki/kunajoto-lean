@@ -1,5 +1,5 @@
 /**
- * ExploreTab - Kunajoto Lean
+ * ExploreTab - Kunajoto
  * Simplified, admin-driven content display
  * No vibe scores or forecasts - just venues and curated content
  */
