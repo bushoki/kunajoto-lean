@@ -257,38 +257,59 @@ const App: React.FC = () => {
     loadVenues();
   }, [isAuthenticated]);
 
-  // Geolocation with Target City Check
+  // Geolocation - Simple version from kunajoto-fire-
   useEffect(() => {
-    if (!locationFoundRef.current && isAuthenticated) {
-      locationFoundRef.current = true;
-      
-      getCurrentLocation().then((location) => {
-        if (location) {
-          setUserLocation(location.coordinates);
-          setMapState({ center: location.coordinates, zoom: 14 });
+    if (navigator.geolocation && !locationFoundRef.current) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserLocation(coords);
+          setMapState({ center: coords, zoom: 14 });
           setHasInitiallyCentered(true);
-          setLocationName(location.city);
-          setDetectedCity(location.city);
-          
-          // Check if user is in a target city
-          if (!location.isTargetCity && !getSelectedCity()) {
-            // Show location restriction modal
-            setShowLocationRestriction(true);
-          } else if (location.isTargetCity) {
-            // Auto-select detected target city
-            handleCitySelection(location.city);
+          locationFoundRef.current = true;
+
+          try {
+            const response = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+            );
+            const data = await response.json();
+            if (data.results && data.results[0]) {
+              const cityComponent = data.results[0].address_components.find((c: any) =>
+                c.types.includes('locality')
+              );
+              const cityName = cityComponent ? cityComponent.long_name : 'Unknown';
+              setLocationName(cityName);
+              setDetectedCity(cityName);
+              
+              // Check if in target city
+              const isTarget = isLocationInTargetCities(cityName);
+              if (isTarget) {
+                handleCitySelection(cityName);
+              } else if (!getSelectedCity()) {
+                // Show location selector for non-target cities
+                setShowLocationRestriction(true);
+              }
+            }
+          } catch (error) {
+            console.error('[App] Geocoding error:', error);
+            setLocationName('Unknown');
           }
-        } else {
+        },
+        (error) => {
+          console.error('[App] Geolocation error:', error);
           setLocationError('Unable to determine location');
           setLocationName('Location unavailable');
-          // Show city selector if location detection fails
+          // Default to first target city
           if (!getSelectedCity()) {
-            setShowLocationRestriction(true);
+            handleCitySelection(TARGET_CITIES[0]);
           }
         }
-      });
+      );
     }
-  }, [isAuthenticated]);
+  }, []);
 
   // Handle city selection
   const handleCitySelection = (city: string) => {
