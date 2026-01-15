@@ -1,0 +1,332 @@
+{
+  "monochrome": true,
+  "variant": "dark",
+  "backgroundColor": "#ff8547",
+  "styles": [
+    {
+      "id": "infrastructure.roadNetwork.noTraffic",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.arts",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.casino",
+      "label": {
+        "pinFillColor": "#ff8647"
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.cinema",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.historic",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.museum",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.themePark",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.entertainment.touristAttraction",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.foodAndDrink.bar",
+      "label": {
+        "pinFillColor": "#ff6a35"
+      }
+    },
+    {
+      "id": "pointOfInterest.foodAndDrink.cafe",
+      "label": {
+        "pinFillColor": "#ff6a00"
+      }
+    },
+    {
+      "id": "pointOfInterest.foodAndDrink.restaurant",
+      "label": {
+        "pinFillColor": "#ff8647"
+      }
+    },
+    {
+      "id": "pointOfInterest.foodAndDrink.winery",
+      "label": {
+        "pinFillColor": "#ff8647"
+      }
+    },
+    {
+      "id": "pointOfInterest.landmark",
+      "label": {
+        "visible": true
+      }
+    },
+    {
+      "id": "pointOfInterest.lodging",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.cemetery",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.government",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.library",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.military",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.placeOfWorship",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.school",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.other.townSquare",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.beach",
+      "geometry": {
+        "fillOpacity": 1,
+        "fillColor": "#ff8647"
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.boating",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.fishing",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.golfCourse",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.hotSpring",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.natureReserve",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.park",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.peak",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.sportsComplex",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.sportsField",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.trailhead",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.recreation.zoo",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.retail",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.retail.grocery",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.retail.shopping",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.atm",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.bank",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.carRental",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.evCharging",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.gasStation",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.parkingLot",
+      "geometry": {
+        "visible": false
+      },
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.postOffice",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.restroom",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "pointOfInterest.service.restStop",
+      "label": {
+        "visible": false
+      }
+    },
+    {
+      "id": "political.reservation",
+      "geometry": {
+        "visible": false
+      }
+    },
+    {
+      "id": "political.sublocality",
+      "label": {
+        "visible": false
+      }
+    }
+  ]
+}

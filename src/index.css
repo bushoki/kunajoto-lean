@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@source "../*.tsx";
+@source "../components/**/*.tsx";
+
+/* Custom CSS from index.html */
+body {
+  background-color: #f3f4f6; /* Light grey background */
+  color: #121212;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* User Pin Styles - Robust CSS for Google Maps Overlay */
+/* Changed to Purple to distinguish from Low Vibe (Blue) */
+.user-pin-container {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%); /* Center on coordinate */
+  cursor: pointer;
+}
+.user-pin-dot {
+  background-color: #9333EA; /* Purple */
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 20;
+  position: relative;
+}
+.user-pin-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background-color: #9333EA; /* Purple */
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: breathe 2s ease-in-out infinite;
+  z-index: 10;
+}
+
+/* Venue Marker Container for Google Maps */
+.venue-marker-container {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: z-index 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.venue-marker-container:hover {
+  z-index: 1000 !important;
+}
+
+/* Pulsating Ring for Venues */
+.venue-pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  opacity: 0.6;
+  z-index: 0; /* Behind the main circle */
+  animation: venue-pulse 2s infinite;
+}

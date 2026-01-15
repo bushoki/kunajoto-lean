@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Kunajoto - Your Nightlife Vibe Forecast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Maps API - Injected dynamically by app -->
+
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                DEFAULT: '#FF6B35', // Vibrant Orange
+                hover: '#E85A2D',
+                light: '#FF8A5E',
+              },
+              dark: {
+                DEFAULT: '#121212',
+                surface: '#1E1E1E',
+                lighter: '#2C2C2C'
+              },
+              vibe: {
+                low: '#3B82F6',   // Blue/Cold
+                med: '#22C55E',   // Green/Moderate
+                high: '#EAB308',  // Yellow/Warm
+                hot: '#EF4444'    // Red/Hot
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #f3f4f6; /* Light grey background */
+        color: #121212;
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      /* User Pin Styles - Robust CSS for Google Maps Overlay */
+      /* Changed to Purple to distinguish from Low Vibe (Blue) */
+      .user-pin-container {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%); /* Center on coordinate */
+        cursor: pointer;
+      }
+      .user-pin-dot {
+        background-color: #9333EA; /* Purple */
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 20;
+        position: relative;
+      }
+      .user-pin-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        background-color: #9333EA; /* Purple */
+        border-radius: 50%;
+        opacity: 0.5;
+        animation: breathe 2s ease-in-out infinite;
+        z-index: 10;
+      }
+
+      /* Venue Marker Container for Google Maps */
+      .venue-marker-container {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+        transition: z-index 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .venue-marker-container:hover {
+        z-index: 1000 !important;
+      }
+
+      /* Pulsating Ring for Venues */
+      .venue-pulse-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        opacity: 0.6;
+        z-index: 0; /* Behind the main circle */
+        animation: venue-pulse 2s infinite;
+      }
+
+      @keyframes breathe {
+        0% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 0; transform: translate(-50%, -50%) scale(2.5); }
+        100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+      }
+
+      @keyframes venue-pulse {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+        70% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+      }
+
+      /* Marquee Animation for Ticker */
+      @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+      }
+      .animate-marquee {
+        display: inline-block;
+        white-space: nowrap;
+        animation: marquee 40s linear infinite;
+      }
+    </style>
+</head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Dynamically load Google Maps API with key from environment
+      // The API key and Map ID will be injected by Vite's define plugin
+      window.__GOOGLE_MAPS_API_KEY__ = '__VITE_GOOGLE_MAPS_API_KEY__';
+      window.__GOOGLE_MAP_ID__ = '__VITE_GOOGLE_MAP_ID__';
+      (function() {
+        const apiKey = window.__GOOGLE_MAPS_API_KEY__;
+        // Only load if key exists and looks like a real Google Maps API key (starts with AIzaSy)
+        if (apiKey && apiKey.startsWith('AIzaSy')) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+          script.async = true;
+          script.defer = true;
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

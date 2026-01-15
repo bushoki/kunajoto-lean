@@ -1,0 +1,7 @@
+{
+  "name": "Kunajoto",
+  "description": "Your Nightlife Vibe Forecast - The AccuWeather for Nightlife. Real-time vibe scores, AI-driven itineraries, and heatmap discovery.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
