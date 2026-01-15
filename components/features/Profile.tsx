@@ -102,28 +102,7 @@ const Profile: React.FC<ProfileProps> = ({
            <i className="fa-solid fa-chevron-right text-gray-300"></i>
         </div>
 
-        {/* Premium Subscription Card - Dynamic */}
-        {displayPlan && (
-            <div className="bg-gradient-to-br from-[#FF6B35] to-[#FF8A5E] rounded-2xl p-5 text-white shadow-lg shadow-orange-200 mb-8 relative overflow-hidden">
-            <div className="relative z-10">
-                <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-lg">{displayPlan.name}</h3>
-                <span className="bg-white/20 text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm">Free now</span>
-                </div>
-                <ul className="space-y-1.5 text-xs mb-4 font-medium opacity-90">
-                {displayPlan.perks.slice(0,2).map((perk, i) => (
-                    <li key={i} className="flex items-center gap-2"><i className="fa-solid fa-star"></i> {perk}</li>
-                ))}
-                </ul>
-                <button className="w-full py-2.5 bg-white text-primary font-bold text-sm rounded-xl shadow-sm hover:bg-gray-50 transition">
-                Upgrade to {displayPlan.name} - ${displayPlan.priceMonthly}/mo
-                </button>
-            </div>
-            {/* Decorative Circles */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full"></div>
-            <div className="absolute bottom-0 left-10 w-20 h-20 bg-white/5 rounded-full"></div>
-            </div>
-        )}
+        {/* Subscription panel removed for kunajoto-lean */}
 
         {/* Actions Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
