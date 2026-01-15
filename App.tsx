@@ -260,8 +260,25 @@ const App: React.FC = () => {
   // Geolocation - Simple version from kunajoto-fire-
   useEffect(() => {
     if (navigator.geolocation && !locationFoundRef.current) {
+      console.log('📍 [App] Starting geolocation...');
+      
+      // Set a timeout to ensure we don't block forever
+      const geoTimeout = setTimeout(() => {
+        if (!locationFoundRef.current) {
+          console.warn('⏱️ [App] Geolocation timeout, using default city');
+          locationFoundRef.current = true;
+          setLocationName(TARGET_CITIES[0]);
+          if (!getSelectedCity()) {
+            handleCitySelection(TARGET_CITIES[0]);
+          }
+        }
+      }, 5000); // 5 second timeout
+      
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          clearTimeout(geoTimeout);
+          if (locationFoundRef.current) return;
+          
           const coords = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
@@ -270,6 +287,8 @@ const App: React.FC = () => {
           setMapState({ center: coords, zoom: 14 });
           setHasInitiallyCentered(true);
           locationFoundRef.current = true;
+          
+          console.log('✅ [App] Geolocation success:', coords);
 
           try {
             const response = await fetch(
@@ -284,6 +303,8 @@ const App: React.FC = () => {
               setLocationName(cityName);
               setDetectedCity(cityName);
               
+              console.log('🏙️ [App] City detected:', cityName);
+              
               // Check if in target city
               const isTarget = isLocationInTargetCities(cityName);
               if (isTarget) {
@@ -296,16 +317,26 @@ const App: React.FC = () => {
           } catch (error) {
             console.error('[App] Geocoding error:', error);
             setLocationName('Unknown');
+            if (!getSelectedCity()) {
+              handleCitySelection(TARGET_CITIES[0]);
+            }
           }
         },
         (error) => {
+          clearTimeout(geoTimeout);
           console.error('[App] Geolocation error:', error);
+          locationFoundRef.current = true;
           setLocationError('Unable to determine location');
           setLocationName('Location unavailable');
           // Default to first target city
           if (!getSelectedCity()) {
             handleCitySelection(TARGET_CITIES[0]);
           }
+        },
+        {
+          timeout: 5000,
+          maximumAge: 300000,
+          enableHighAccuracy: false // Use false for faster response
         }
       );
     }
@@ -320,38 +351,66 @@ const App: React.FC = () => {
   };
 
   const handleAuthSuccess = async () => {
-    // Get current session
-    const session = await authService.getSession();
-    if (!session?.user) {
-      console.error('❌ [handleAuthSuccess] No session found');
-      return;
+    console.log('🔑 [handleAuthSuccess] Starting auth success flow...');
+    
+    try {
+      // Get current session
+      const session = await authService.getSession();
+      if (!session?.user) {
+        console.error('❌ [handleAuthSuccess] No session found');
+        return;
+      }
+      
+      console.log('✅ [handleAuthSuccess] Session found:', session.user.id);
+      
+      setIsAuthenticated(true);
+      setUserId(session.user.id); // FIX: Set userId to prevent ghost user
+      
+      // Load user data
+      try {
+        const profile = await authService.getUserProfile();
+        if (profile) {
+          setUserRole(profile.default_role || 'guest');
+          setUserEmail(profile.email || session.user.email || '');
+          setUserName(profile.full_name || profile.first_name || session.user.email?.split('@')[0] || 'User');
+          console.log('✅ [handleAuthSuccess] Profile loaded:', { email: profile.email, name: profile.full_name });
+        } else {
+          // Fallback to session data
+          const email = session.user.email || '';
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User';
+          setUserEmail(email);
+          setUserName(name);
+          console.log('⚠️ [handleAuthSuccess] No profile, using session data:', { email, name });
+        }
+      } catch (profileError) {
+        console.error('⚠️ [handleAuthSuccess] Profile load error:', profileError);
+        // Continue anyway with session data
+        const email = session.user.email || '';
+        const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
+        setUserEmail(email);
+        setUserName(name);
+      }
+      
+      console.log('🚀 [handleAuthSuccess] Transitioning to MAIN_APP...');
+      
+      // Go to main app, landing on explore tab
+      setAppState(AppState.MAIN_APP);
+      setCurrentTab('explore');
+      
+      console.log('📍 [handleAuthSuccess] Loading venues...');
+      
+      // Load venues and favorites (don't await to avoid blocking UI)
+      loadVenues().catch(err => {
+        console.error('⚠️ [handleAuthSuccess] Venue load error:', err);
+      });
+      
+      console.log('✅ [handleAuthSuccess] Auth success flow complete!');
+    } catch (error) {
+      console.error('❌ [handleAuthSuccess] Critical error:', error);
+      // Still try to show the app
+      setAppState(AppState.MAIN_APP);
+      setCurrentTab('explore');
     }
-    
-    setIsAuthenticated(true);
-    setUserId(session.user.id); // FIX: Set userId to prevent ghost user
-    
-    // Load user data
-    const profile = await authService.getUserProfile();
-    if (profile) {
-      setUserRole(profile.default_role || 'guest');
-      setUserEmail(profile.email || session.user.email || '');
-      setUserName(profile.full_name || profile.first_name || session.user.email?.split('@')[0] || 'User');
-      console.log('✅ [handleAuthSuccess] Profile loaded:', { email: profile.email, name: profile.full_name });
-    } else {
-      // Fallback to session data
-      const email = session.user.email || '';
-      const name = session.user.user_metadata?.full_name || session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User';
-      setUserEmail(email);
-      setUserName(name);
-      console.log('⚠️ [handleAuthSuccess] No profile, using session data:', { email, name });
-    }
-    
-    // Go to main app, landing on explore tab
-    setAppState(AppState.MAIN_APP);
-    setCurrentTab('explore');
-    
-    // Load venues and favorites
-    await loadVenues();
   };
 
   const handleLogout = async () => {
