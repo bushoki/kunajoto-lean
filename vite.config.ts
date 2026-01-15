@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => {
     const GOOGLE_MAPS_MAP_ID = process.env.VITE_GOOGLE_MAP_ID || fileEnv.VITE_GOOGLE_MAP_ID || '';
     
     // Debug: Log to verify keys are being read
+    console.log('[Vite Config] SUPABASE_URL:', SUPABASE_URL ? 'SET' : 'EMPTY');
+    console.log('[Vite Config] SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'SET (' + SUPABASE_ANON_KEY.substring(0, 20) + '...)' : 'EMPTY');
     if (GOOGLE_MAPS_API_KEY) {
       console.log('[Vite Config] Google Maps API Key detected');
     }
