@@ -335,15 +335,31 @@ export async function getAllContentForCity(city: string) {
  * Check if user is an app admin
  */
 export async function isUserAppAdmin(userId: string): Promise<boolean> {
+  console.log('[AdminService] Checking admin status for userId:', userId);
+  
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('is_app_admin')
+    .select('is_app_admin, default_role')
     .eq('id', userId)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    console.error('[AdminService] Error checking admin status:', error);
     return false;
   }
 
-  return data.is_app_admin === true;
+  if (!data) {
+    console.log('[AdminService] No user profile found');
+    return false;
+  }
+
+  console.log('[AdminService] User profile data:', data);
+  
+  // Check both is_app_admin flag and default_role
+  const isAdmin = data.is_app_admin === true || 
+                  data.default_role === 'app_admin' || 
+                  data.default_role === 'super_admin';
+  
+  console.log('[AdminService] Is admin:', isAdmin);
+  return isAdmin;
 }
