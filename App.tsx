@@ -22,6 +22,8 @@ import ExploreTab from './components/features/ExploreTab';
 import { authService } from './services/authService';
 import { dataService } from './services/dataService';
 import { supabase } from './src/supabaseClient';
+import { getCurrentLocation, isLocationInTargetCities, getSelectedCity, setSelectedCity, TARGET_CITIES } from './services/locationService';
+import LocationRestrictionModal from './components/features/LocationRestrictionModal';
 
 const App: React.FC = () => {
   // Check if user has seen onboarding
@@ -67,6 +69,11 @@ const App: React.FC = () => {
   const [locationName, setLocationName] = useState<string>('Locating...');
   const [locationError, setLocationError] = useState<string | null>(null);
   const locationFoundRef = useRef(false);
+  
+  // Location Control State
+  const [selectedCity, setSelectedCityState] = useState<string>(getSelectedCity() || TARGET_CITIES[0]);
+  const [showLocationRestriction, setShowLocationRestriction] = useState(false);
+  const [detectedCity, setDetectedCity] = useState<string>('');
   
   // Map Persistence State
   const [mapState, setMapState] = useState<MapState>({
@@ -250,45 +257,46 @@ const App: React.FC = () => {
     loadVenues();
   }, [isAuthenticated]);
 
-  // Geolocation
+  // Geolocation with Target City Check
   useEffect(() => {
-    if (navigator.geolocation && !locationFoundRef.current) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setUserLocation(coords);
-          setMapState({ center: coords, zoom: 14 });
+    if (!locationFoundRef.current && isAuthenticated) {
+      locationFoundRef.current = true;
+      
+      getCurrentLocation().then((location) => {
+        if (location) {
+          setUserLocation(location.coordinates);
+          setMapState({ center: location.coordinates, zoom: 14 });
           setHasInitiallyCentered(true);
-          locationFoundRef.current = true;
-
-          try {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-            );
-            const data = await response.json();
-            if (data.results && data.results[0]) {
-              const cityComponent = data.results[0].address_components.find((c: any) =>
-                c.types.includes('locality')
-              );
-              const cityName = cityComponent ? cityComponent.long_name : 'Unknown';
-              setLocationName(cityName);
-            }
-          } catch (error) {
-            console.error('[App] Geocoding error:', error);
-            setLocationName('Unknown');
+          setLocationName(location.city);
+          setDetectedCity(location.city);
+          
+          // Check if user is in a target city
+          if (!location.isTargetCity && !getSelectedCity()) {
+            // Show location restriction modal
+            setShowLocationRestriction(true);
+          } else if (location.isTargetCity) {
+            // Auto-select detected target city
+            handleCitySelection(location.city);
           }
-        },
-        (error) => {
-          console.error('[App] Geolocation error:', error);
+        } else {
           setLocationError('Unable to determine location');
           setLocationName('Location unavailable');
+          // Show city selector if location detection fails
+          if (!getSelectedCity()) {
+            setShowLocationRestriction(true);
+          }
         }
-      );
+      });
     }
-  }, []);
+  }, [isAuthenticated]);
+
+  // Handle city selection
+  const handleCitySelection = (city: string) => {
+    setSelectedCityState(city);
+    setSelectedCity(city); // Save to localStorage
+    setLocationName(city);
+    console.log('[App] City selected:', city);
+  };
 
   const handleAuthSuccess = async () => {
     // Get current session
@@ -393,6 +401,15 @@ const App: React.FC = () => {
 
       {appState === AppState.AUTH_REQUIRED && (
         <AuthRequired onAuthSuccess={handleAuthSuccess} />
+      )}
+
+      {/* Location Restriction Modal */}
+      {showLocationRestriction && (
+        <LocationRestrictionModal
+          detectedCity={detectedCity || 'your location'}
+          onSelectCity={handleCitySelection}
+          onClose={() => setShowLocationRestriction(false)}
+        />
       )}
 
       {appState === AppState.ADMIN_DASHBOARD && (
@@ -509,6 +526,8 @@ const App: React.FC = () => {
             {currentTab === 'explore' && (
               <ExploreTab 
                 locationName={locationName}
+                selectedCity={selectedCity}
+                onCityChange={handleCitySelection}
                 onOpenPreferences={() => {}}
                 hasCompletedPrefs={true}
                 isAuthenticated={isAuthenticated}

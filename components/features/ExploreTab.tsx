@@ -21,31 +21,28 @@ const TARGET_CITIES = [
 ];
 
 interface ExploreTabProps {
-  userLocation: { city: string; country: string } | null;
-  onLocationChange: (city: string) => void;
+  locationName: string;
+  selectedCity: string;
+  onCityChange: (city: string) => void;
+  onOpenPreferences: () => void;
+  hasCompletedPrefs: boolean;
+  isAuthenticated: boolean;
+  onVenueSelect: (venue: any) => void;
+  onOpenPlans: () => void;
 }
 
-export default function ExploreTab({ userLocation, onLocationChange }: ExploreTabProps) {
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+export default function ExploreTab({ 
+  locationName,
+  selectedCity,
+  onCityChange,
+  onOpenPreferences,
+  hasCompletedPrefs,
+  isAuthenticated,
+  onVenueSelect,
+  onOpenPlans
+}: ExploreTabProps) {
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showCitySelector, setShowCitySelector] = useState(false);
-
-  // Determine if user's location is in target cities
-  useEffect(() => {
-    if (userLocation) {
-      const isTargetCity = TARGET_CITIES.some(
-        city => city.toLowerCase() === userLocation.city.toLowerCase()
-      );
-
-      if (isTargetCity) {
-        setSelectedCity(userLocation.city);
-      } else {
-        // User not in target city - show selector
-        setShowCitySelector(true);
-      }
-    }
-  }, [userLocation]);
 
   // Load content when city changes
   useEffect(() => {
