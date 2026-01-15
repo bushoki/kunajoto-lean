@@ -1,5 +1,6 @@
 
 export enum AppState {
+  GUEST_INTRO = 'GUEST_INTRO',
   SPLASH = 'SPLASH',
   AUTH_REQUIRED = 'AUTH_REQUIRED',
   MAIN_APP = 'MAIN_APP',

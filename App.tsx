@@ -11,6 +11,7 @@ import Profile from './components/features/Profile';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SplashScreen from './components/layout/SplashScreen';
 import AuthRequired from './components/features/AuthRequired';
+import Onboarding from './components/features/Onboarding';
 import Plans from './components/features/Plans';
 import Favorites from './components/features/Favorites';
 import PlanSelectionModal from './components/features/PlanSelectionModal';
@@ -23,8 +24,13 @@ import { dataService } from './services/dataService';
 import { supabase } from './src/supabaseClient';
 
 const App: React.FC = () => {
-  // Start with SPLASH screen
-  const [appState, setAppState] = useState<AppState>(AppState.SPLASH);
+  // Check if user has seen onboarding
+  const hasSeenOnboarding = localStorage.getItem('kunajoto_lean_onboarding_seen') === 'true';
+  
+  // Start with ONBOARDING if first time, otherwise SPLASH
+  const [appState, setAppState] = useState<AppState>(
+    hasSeenOnboarding ? AppState.SPLASH : AppState.GUEST_INTRO
+  );
   
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,8 +83,18 @@ const App: React.FC = () => {
   // City Vibe Score State
   const [cityVibeScore, setCityVibeScore] = useState<number | undefined>(undefined);
 
-  // Splash screen timeout
+  // Handle onboarding completion
+  const handleOnboardingComplete = (skipped: boolean) => {
+    // Mark onboarding as seen
+    localStorage.setItem('kunajoto_lean_onboarding_seen', 'true');
+    // Move to splash screen
+    setAppState(AppState.SPLASH);
+  };
+
+  // Splash screen timeout (only runs when in SPLASH state)
   useEffect(() => {
+    if (appState !== AppState.SPLASH) return;
+
     const splashTimer = setTimeout(async () => {
       // After splash, check if user is authenticated
       const session = await authService.getSession();
@@ -93,7 +109,7 @@ const App: React.FC = () => {
     }, 3000); // 3 second splash
 
     return () => clearTimeout(splashTimer);
-  }, []);
+  }, [appState]);
 
   // --- 0. INIT DATA & AUTH ---
   useEffect(() => {
@@ -349,6 +365,14 @@ const App: React.FC = () => {
   return (
     <div className={`relative w-full h-screen overflow-hidden font-sans ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-dark'}`}>
       
+      {appState === AppState.GUEST_INTRO && (
+        <Onboarding 
+          type="GUEST" 
+          onComplete={handleOnboardingComplete} 
+          slides={onboardingSlides}
+        />
+      )}
+
       {appState === AppState.SPLASH && <SplashScreen />}
 
       {appState === AppState.AUTH_REQUIRED && (
@@ -526,7 +550,7 @@ const App: React.FC = () => {
                 setPlanSelectionVenue(venue);
                 setAvailablePlans(draftPlans);
                 setShowPlanSelection(true);
-              } catch (error) {
+              } catch (error: any) {
                 console.error('[App] Error fetching plans:', error);
                 alert(`Failed to load plans: ${error.message}`);
               }
@@ -552,7 +576,7 @@ const App: React.FC = () => {
               await dataService.addVenueToPlan(planId, planSelectionVenue.id);
               const plan = availablePlans.find(p => p.id === planId);
               alert(`Added ${planSelectionVenue.name} to "${plan?.title || 'plan'}"!`);
-            } catch (error) {
+            } catch (error: any) {
               console.error('[App] Error adding to plan:', error);
               alert(`Failed to add venue: ${error.message}`);
             }
@@ -562,7 +586,7 @@ const App: React.FC = () => {
               const newPlan = await dataService.createPlan(`Night Out - ${new Date().toLocaleDateString()}`);
               await dataService.addVenueToPlan(newPlan.id, planSelectionVenue.id);
               alert(`Added ${planSelectionVenue.name} to new plan!`);
-            } catch (error) {
+            } catch (error: any) {
               console.error('[App] Error creating plan:', error);
               alert(`Failed to create plan: ${error.message}`);
             }
