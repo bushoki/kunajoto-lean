@@ -13,8 +13,16 @@
   # Disable smart detection to prevent false positives on Google Maps API key
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
 
+# SPA redirect - only for non-file requests
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  conditions = {Role = ["*"]}
   force = false
+
+# Ensure assets are served correctly
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
