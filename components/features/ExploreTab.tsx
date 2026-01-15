@@ -43,6 +43,7 @@ export default function ExploreTab({
 }: ExploreTabProps) {
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showCitySelector, setShowCitySelector] = useState(false);
 
   // Load content when city changes
   useEffect(() => {
@@ -64,9 +65,8 @@ export default function ExploreTab({
   };
 
   const handleCitySelect = (city: string) => {
-    setSelectedCity(city);
+    onCityChange(city);
     setShowCitySelector(false);
-    onLocationChange(city);
   };
 
   // Show city selector if user not in target city
@@ -79,8 +79,8 @@ export default function ExploreTab({
               Welcome to Kunajoto! 🌍
             </h2>
             <p className="text-gray-600 text-lg">
-              {userLocation
-                ? `We're not yet available in ${userLocation.city}. Select a city to explore:`
+              {locationName && !TARGET_CITIES.includes(locationName)
+                ? `We're not yet available in ${locationName}. Select a city to explore:`
                 : 'Select a city to explore:'}
             </p>
           </div>
