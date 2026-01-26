@@ -575,7 +575,7 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
       // Update
       const { error } = await supabase
         .from('admin_city_vibe_scores')
-        .update({ score })
+        .update({ vibe_score: score })
         .eq('id', existing.id);
 
       if (error) {
@@ -591,7 +591,7 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
         .insert({
           city,
           day_of_week: dayOfWeek,
-          score,
+          vibe_score: score,
           created_by: userId
         });
 
@@ -658,12 +658,12 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
               ) : (
                 <div>
                   <div className="text-4xl font-black text-orange-600 mb-2">
-                    {dayScore?.score?.toFixed(1) || '—'}
+                    {dayScore?.vibe_score?.toFixed(1) || '—'}
                   </div>
                   <button
                     onClick={() => {
                       setEditingDay(day);
-                      setEditScore(dayScore?.score || 5);
+                      setEditScore(dayScore?.vibe_score || 5);
                     }}
                     className="w-full px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition"
                   >

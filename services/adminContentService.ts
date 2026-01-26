@@ -87,9 +87,6 @@ export interface AdminAccommodation {
   image_url: string | null;
   affiliate_link: string;
   price_range: string | null;
-  neighborhood: string | null;
-  amenities: string[] | null;
-  is_partner: boolean;
   is_featured: boolean;
   display_order: number;
 }
@@ -227,7 +224,6 @@ export async function getAccommodationsForCity(city: string): Promise<AdminAccom
     .select('*')
     .eq('city', city)
     .order('is_featured', { ascending: false })
-    .order('is_partner', { ascending: false })
     .order('display_order', { ascending: true });
 
   if (error) {
