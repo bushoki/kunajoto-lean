@@ -56,21 +56,35 @@ const Profile: React.FC<ProfileProps> = ({
     <div className="h-full bg-gray-50 flex flex-col relative">
       
       {/* Admin Banner */}
-      <div className="bg-dark text-white px-6 py-3 flex justify-between items-center z-10 shadow-sm">
+      <div className="bg-dark text-white px-6 py-3 flex justify-between items-center z-50 shadow-sm relative">
          <h3 className="text-[10px] font-bold uppercase text-primary tracking-widest">Kunajoto</h3>
-         <div className="flex gap-3 items-center">
+         <div className="flex gap-3 items-center relative z-50">
            {(userRole === 'super_admin' || userRole === 'app_admin') && (
-             <button onClick={onSwitchToAdmin} className="text-xs font-bold hover:text-primary transition">
+             <button 
+               onClick={(e) => {
+                 e.stopPropagation();
+                 onSwitchToAdmin();
+               }} 
+               className="text-xs font-bold hover:text-primary transition relative z-50"
+             >
                <i className="fa-solid fa-gear mr-1"></i> Switch to Admin View
              </button>
            )}
            <button 
              type="button"
-             onClick={() => {
+             onClick={(e) => {
+               e.stopPropagation();
+               e.preventDefault();
                console.log('🔴 Logout button clicked');
                onLogout();
              }}
-             className="text-xs font-bold text-red-400 hover:text-red-300 transition px-3 py-2 -mr-2 active:bg-red-900/20 rounded-lg cursor-pointer"
+             onTouchEnd={(e) => {
+               e.stopPropagation();
+               e.preventDefault();
+               console.log('🔴 Logout button touched');
+               onLogout();
+             }}
+             className="text-xs font-bold text-red-400 hover:text-red-300 transition px-3 py-2 -mr-2 active:bg-red-900/20 rounded-lg cursor-pointer relative z-50 touch-manipulation"
            >
              <i className="fa-solid fa-right-from-bracket mr-1"></i> Log out
            </button>
