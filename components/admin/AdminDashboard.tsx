@@ -495,11 +495,284 @@ function EventForm({
 
 // 2-7. Simplified managers for other content types (similar structure)
 function ArrivalTipsManager({ city, userId }: { city: string; userId: string }) {
-  return <div className="text-center py-12 text-gray-500">
-    <i className="fa-solid fa-plane-arrival text-4xl mb-3"></i>
-    <p>Arrival Tips Manager - Coming Soon</p>
-    <p className="text-sm mt-2">Manage best arrival days and tips for {city}</p>
-  </div>;
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+
+  useEffect(() => {
+    loadItems();
+  }, [city]);
+
+  const loadItems = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('admin_arrival_tips')
+      .select('*')
+      .eq('city', city)
+      .order('display_order', { ascending: true });
+
+    if (!error && data) {
+      setItems(data);
+    }
+    setLoading(false);
+  };
+
+  const deleteItem = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this arrival tip?')) return;
+
+    const { error } = await supabase.from('admin_arrival_tips').delete().eq('id', id);
+
+    if (!error) {
+      loadItems();
+    } else {
+      alert('Error deleting arrival tip: ' + error.message);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading arrival tips...</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Best to Arrive On - {city}
+        </h2>
+        <button
+          onClick={() => {
+            setEditingItem(null);
+            setShowForm(!showForm);
+          }}
+          className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
+        >
+          <i className="fa-solid fa-plus mr-2"></i>
+          Add Arrival Tip
+        </button>
+      </div>
+
+      {showForm && (
+        <ArrivalTipForm
+          city={city}
+          userId={userId}
+          editingItem={editingItem}
+          onSuccess={() => {
+            setShowForm(false);
+            setEditingItem(null);
+            loadItems();
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingItem(null);
+          }}
+        />
+      )}
+
+      {items.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <i className="fa-solid fa-plane-arrival text-4xl mb-3"></i>
+          <p>No arrival tips added yet for {city}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    {item.day_of_week && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                        {item.day_of_week}
+                      </span>
+                    )}
+                    {item.time_range && (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm font-semibold rounded-full">
+                        {item.time_range}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-900 font-medium">{item.description}</p>
+                  {item.reason && (
+                    <p className="text-gray-600 text-sm mt-2">💡 {item.reason}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <button
+                    onClick={() => {
+                      setEditingItem(item);
+                      setShowForm(true);
+                    }}
+                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors"
+                  >
+                    <i className="fa-solid fa-pen"></i>
+                  </button>
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+                  >
+                    <i className="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArrivalTipForm({
+  city,
+  userId,
+  editingItem,
+  onSuccess,
+  onCancel
+}: {
+  city: string;
+  userId: string;
+  editingItem: any;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    day_of_week: editingItem?.day_of_week || '',
+    time_range: editingItem?.time_range || '',
+    description: editingItem?.description || '',
+    reason: editingItem?.reason || '',
+    display_order: editingItem?.display_order || 0
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    const payload = {
+      city,
+      ...formData,
+      created_by: userId
+    };
+
+    let error;
+    if (editingItem) {
+      const result = await supabase
+        .from('admin_arrival_tips')
+        .update(payload)
+        .eq('id', editingItem.id);
+      error = result.error;
+    } else {
+      const result = await supabase.from('admin_arrival_tips').insert([payload]);
+      error = result.error;
+    }
+
+    setSaving(false);
+
+    if (error) {
+      alert('Error saving arrival tip: ' + error.message);
+    } else {
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="mb-6 p-6 bg-white border-2 border-orange-200 rounded-2xl">
+      <h3 className="text-xl font-bold mb-4">
+        {editingItem ? 'Edit' : 'Add'} Arrival Tip
+      </h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Day of Week
+            </label>
+            <select
+              value={formData.day_of_week}
+              onChange={(e) => setFormData({ ...formData, day_of_week: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">Any Day</option>
+              {DAYS_OF_WEEK.map((day) => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Time Range
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Morning, 9AM-12PM"
+              value={formData.time_range}
+              onChange={(e) => setFormData({ ...formData, time_range: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Description *
+          </label>
+          <textarea
+            required
+            placeholder="e.g., Arrive on Friday evening for the best weekend experience"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Reason
+          </label>
+          <textarea
+            placeholder="Why is this a good time to arrive?"
+            value={formData.reason}
+            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+            rows={2}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Display Order
+          </label>
+          <input
+            type="number"
+            value={formData.display_order}
+            onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : editingItem ? 'Update' : 'Create'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition-colors font-semibold"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 function StayRecommendationsManager({ city, userId }: { city: string; userId: string }) {
