@@ -841,8 +841,17 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
   };
 
   const saveScore = async (dayOfWeek: string, score: number) => {
+    // Convert day name to integer (0=Monday, 1=Tuesday, etc.)
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayIndex = dayNames.indexOf(dayOfWeek);
+    
+    if (dayIndex === -1) {
+      alert('Invalid day of week');
+      return;
+    }
+    
     // Check if score exists
-    const existing = scores.find(s => s.day_of_week === dayOfWeek);
+    const existing = scores.find(s => s.day_of_week === dayIndex);
 
     if (existing) {
       // Update
@@ -863,7 +872,7 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
         .from('admin_city_vibe_scores')
         .insert({
           city,
-          day_of_week: dayOfWeek,
+          day_of_week: dayIndex,
           vibe_score: score,
           created_by: userId
         });
@@ -891,8 +900,8 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {DAYS_OF_WEEK.map((day) => {
-          const dayScore = scores.find(s => s.day_of_week === day);
+        {DAYS_OF_WEEK.map((day, dayIndex) => {
+          const dayScore = scores.find(s => s.day_of_week === dayIndex);
           const isEditing = editingDay === day;
 
           return (
