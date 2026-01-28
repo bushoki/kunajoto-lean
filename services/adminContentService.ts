@@ -261,7 +261,62 @@ export async function getTravelServicesForCity(
 }
 
 /**
- * Get current week's vibe scores for a city
+ * Get full week's vibe scores for a city
+ */
+export async function getWeekVibeScoresForCity(city: string): Promise<{
+  weekStartDate: string;
+  scores: { day: string; score: number; dayOfWeek: number }[];
+  currentDayScore: number | null;
+  trendingUp: boolean;
+} | null> {
+  // Get current week start date (Monday)
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  const weekStartDate = monday.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('admin_city_vibe_scores')
+    .select('*')
+    .eq('city', city)
+    .eq('week_start_date', weekStartDate)
+    .single();
+
+  if (error || !data) {
+    console.error('Error fetching vibe scores:', error);
+    return null;
+  }
+
+  // Build array of scores for the week (Monday to Sunday)
+  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const scores = dayNames.map((day, index) => ({
+    day: day.charAt(0).toUpperCase() + day.slice(1, 3), // Mon, Tue, etc.
+    score: data[`${day}_score`] || 0,
+    dayOfWeek: index // 0=Monday, 6=Sunday
+  }));
+
+  // Get current day score
+  const currentDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert Sunday=0 to Sunday=6
+  const currentDayScore = scores[currentDayIndex]?.score || null;
+
+  // Determine if trending up (compare current day with previous day)
+  let trendingUp = false;
+  if (currentDayIndex > 0 && currentDayScore) {
+    const previousDayScore = scores[currentDayIndex - 1]?.score || 0;
+    trendingUp = currentDayScore > previousDayScore;
+  }
+
+  return {
+    weekStartDate,
+    scores,
+    currentDayScore,
+    trendingUp
+  };
+}
+
+/**
+ * Get current day's vibe score for a city (legacy function)
  */
 export async function getCurrentVibeScoreForCity(city: string): Promise<number | null> {
   // Get current week start date (Monday)

@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { getAllContentForCity } from '../../services/adminContentService';
+import { getAllContentForCity, getWeekVibeScoresForCity } from '../../services/adminContentService';
 import { supabase } from '../../src/supabaseClient';
 
 // Target cities
@@ -44,6 +44,7 @@ export default function ExploreTab({
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCitySelector, setShowCitySelector] = useState(false);
+  const [vibeData, setVibeData] = useState<any>(null);
 
   // Load content when city changes
   useEffect(() => {
@@ -55,8 +56,12 @@ export default function ExploreTab({
   const loadContentForCity = async (city: string) => {
     setLoading(true);
     try {
-      const data = await getAllContentForCity(city);
-      setContent(data);
+      const [contentData, vibeScores] = await Promise.all([
+        getAllContentForCity(city),
+        getWeekVibeScoresForCity(city)
+      ]);
+      setContent(contentData);
+      setVibeData(vibeScores);
     } catch (error) {
       console.error('Error loading content:', error);
     } finally {
@@ -137,6 +142,80 @@ export default function ExploreTab({
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* City Vibe Forecast */}
+        {vibeData && vibeData.currentDayScore !== null && (
+          <section className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              {selectedCity} City Vibe
+            </h2>
+            
+            {/* Overall Score and Trend */}
+            <div className="flex items-center gap-4 mb-2">
+              <div className="text-5xl font-bold text-orange-600">
+                {vibeData.currentDayScore.toFixed(1)}
+              </div>
+              <div className="flex items-center gap-1 text-sm font-medium">
+                {vibeData.trendingUp ? (
+                  <>
+                    <span className="text-green-600">↑</span>
+                    <span className="text-green-600">Trending Up</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-red-600">↓</span>
+                    <span className="text-red-600">Trending Down</span>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-500 uppercase tracking-wide mb-4">
+              City 7-Day Forecast
+            </p>
+            
+            {/* 7-Day Bar Chart */}
+            <div className="flex items-end justify-between gap-2 h-40">
+              {vibeData.scores.map((dayData: any, index: number) => {
+                const today = new Date();
+                const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                const isToday = index === currentDayIndex;
+                const maxScore = 10;
+                const barHeight = (dayData.score / maxScore) * 100;
+                
+                // Color based on today's score
+                let barColor = 'bg-gray-300'; // Default grey for all bars
+                if (isToday) {
+                  // Color today's bar based on the score
+                  if (vibeData.currentDayScore >= 8) barColor = 'bg-red-500';
+                  else if (vibeData.currentDayScore >= 6) barColor = 'bg-yellow-500';
+                  else if (vibeData.currentDayScore >= 4) barColor = 'bg-green-500';
+                  else barColor = 'bg-blue-500';
+                }
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    {/* Score value above bar */}
+                    <div className="text-xs font-semibold text-gray-700 mb-1">
+                      {dayData.score.toFixed(1)}
+                    </div>
+                    {/* Bar */}
+                    <div className="w-full bg-gray-100 rounded-t relative" style={{ height: '120px' }}>
+                      <div
+                        className={`${barColor} rounded-t absolute bottom-0 w-full transition-all duration-300`}
+                        style={{ height: `${barHeight}%` }}
+                      />
+                    </div>
+                    {/* Day label */}
+                    <div className="text-xs text-gray-600 mt-2 font-medium">
+                      {dayData.day}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Events of the Month */}
         {content?.events && content.events.length > 0 && (
           <section className="bg-white rounded-2xl shadow-lg p-6">
@@ -278,12 +357,7 @@ export default function ExploreTab({
           />
         </div>
 
-        {/* Weather/Alert Banner (placeholder) */}
-        <div className="bg-blue-600 text-white rounded-2xl p-4 shadow-lg">
-          <p className="text-center font-medium">
-            🌤️ Perfect weather expected this weekend!
-          </p>
-        </div>
+
       </div>
     </div>
   );
