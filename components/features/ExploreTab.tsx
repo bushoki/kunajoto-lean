@@ -170,7 +170,7 @@ export default function ExploreTab({
             </div>
             
             <p className="text-sm text-gray-500 uppercase tracking-wide mb-4">
-              City 7-Day Forecast
+              7-Day City Vibe Forecast
             </p>
             
             {/* 7-Day Bar Chart */}
