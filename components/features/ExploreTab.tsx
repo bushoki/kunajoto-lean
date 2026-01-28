@@ -143,7 +143,7 @@ export default function ExploreTab({
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         {/* City Vibe Forecast */}
-        {vibeData && vibeData.currentDayScore !== null && (
+        {vibeData && (
           <section className="bg-white rounded-2xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-1">
               {selectedCity} City Vibe
@@ -152,7 +152,7 @@ export default function ExploreTab({
             {/* Overall Score and Trend */}
             <div className="flex items-center gap-4 mb-2">
               <div className="text-5xl font-bold text-orange-600">
-                {vibeData.currentDayScore.toFixed(1)}
+                {vibeData.currentDayScore !== null ? vibeData.currentDayScore.toFixed(1) : 'N/A'}
               </div>
               <div className="flex items-center gap-1 text-sm font-medium">
                 {vibeData.trendingUp ? (
