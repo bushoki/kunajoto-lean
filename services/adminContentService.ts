@@ -276,28 +276,37 @@ export async function getWeekVibeScoresForCity(city: string): Promise<{
   monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   const weekStartDate = monday.toISOString().split('T')[0];
 
+  // Fetch all rows for this city and week (each row is one day)
   const { data, error } = await supabase
     .from('admin_city_vibe_scores')
     .select('*')
     .eq('city', city)
     .eq('week_start_date', weekStartDate)
-    .single();
+    .order('day_of_week', { ascending: true });
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     console.error('Error fetching vibe scores:', error);
     return null;
   }
 
   // Build array of scores for the week (Monday to Sunday)
-  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const scores = dayNames.map((day, index) => ({
-    day: day.charAt(0).toUpperCase() + day.slice(1, 3), // Mon, Tue, etc.
-    score: data[`${day}_score`] || 0,
+  // day_of_week: 0=Monday, 1=Tuesday, ..., 6=Sunday
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const scoresMap = new Map();
+  
+  data.forEach((row: any) => {
+    scoresMap.set(row.day_of_week, parseFloat(row.vibe_score) || 0);
+  });
+
+  const scores = dayLabels.map((label, index) => ({
+    day: label,
+    score: scoresMap.get(index) || 0,
     dayOfWeek: index // 0=Monday, 6=Sunday
   }));
 
   // Get current day score
-  const currentDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert Sunday=0 to Sunday=6
+  // Convert JavaScript day (0=Sunday) to our format (0=Monday)
+  const currentDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const currentDayScore = scores[currentDayIndex]?.score || null;
 
   // Determine if trending up (compare current day with previous day)
