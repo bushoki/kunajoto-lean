@@ -311,7 +311,7 @@ export default function ExploreTab({
         )}
 
         {/* Action Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-3 md:gap-4">
           {/* Flights & Airport Services */}
           <ActionCard
             title="BOOK A FLIGHT, PRE-BOOK AIRPORT PICKUP & MORE"
@@ -375,10 +375,10 @@ function ActionCard({ title, icon, bgColor, onClick }: ActionCardProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative overflow-hidden bg-gradient-to-r ${bgColor} text-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 min-h-[140px] flex flex-col items-center justify-center text-center`}
+      className={`relative overflow-hidden bg-gradient-to-r ${bgColor} text-white rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 min-h-[100px] md:min-h-[120px] flex flex-col items-center justify-center text-center`}
     >
-      <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="font-bold text-lg leading-tight">{title}</h3>
+      <div className="text-2xl md:text-3xl mb-2">{icon}</div>
+      <h3 className="font-bold text-xs md:text-sm leading-tight">{title}</h3>
     </button>
   );
 }

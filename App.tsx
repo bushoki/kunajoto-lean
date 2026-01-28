@@ -629,11 +629,13 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div 
-            className="absolute bottom-20 left-0 right-0 bg-blue-900/90 backdrop-blur text-white text-[10px] py-1.5 overflow-hidden z-20 shadow-lg border-t border-blue-800/50 cursor-pointer group"
-            onClick={() => setIsTickerPaused(!isTickerPaused)}
-            title={isTickerPaused ? "Click to Resume" : "Click to Pause"}
-          >
+          {/* Hide ticker on Explore tab */}
+          {currentTab !== 'explore' && (
+            <div 
+              className="absolute bottom-20 left-0 right-0 bg-blue-900/90 backdrop-blur text-white text-[10px] py-1.5 overflow-hidden z-20 shadow-lg border-t border-blue-800/50 cursor-pointer group"
+              onClick={() => setIsTickerPaused(!isTickerPaused)}
+              title={isTickerPaused ? "Click to Resume" : "Click to Pause"}
+            >
              <div 
                className="animate-marquee px-4 flex items-center whitespace-nowrap"
                style={{ animationPlayState: isTickerPaused ? 'paused' : 'running' }}
@@ -652,7 +654,8 @@ const App: React.FC = () => {
              {isTickerPaused && (
                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] bg-black/50 px-1.5 rounded text-white">PAUSED</div>
              )}
-          </div>
+            </div>
+          )}
 
           <BottomNav currentTab={currentTab} setTab={handleTabChange} appState={appState} />
         </>
