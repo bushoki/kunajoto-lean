@@ -2,14 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 
 // Supabase credentials from user input
 // Use process.env as configured in vite.config.ts to avoid Netlify secrets scanner
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase environment variables SUPABASE_URL and SUPABASE_ANON_KEY must be set.');
+  console.error('❌ CRITICAL: Supabase environment variables SUPABASE_URL and SUPABASE_ANON_KEY are not set!');
+  console.error('The app will not function properly. Please configure these in Netlify environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Create client even if vars are missing to prevent app crash
+// This allows the app to load and show proper error messages
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
