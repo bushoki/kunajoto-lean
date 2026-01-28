@@ -276,13 +276,15 @@ export async function getWeekVibeScoresForCity(city: string): Promise<{
   monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   const weekStartDate = monday.toISOString().split('T')[0];
 
-  // Fetch all rows for this city and week (each row is one day)
+  // Fetch all rows for this city (get most recent week's data)
+  // More flexible: don't require exact week_start_date match
   const { data, error } = await supabase
     .from('admin_city_vibe_scores')
     .select('*')
     .eq('city', city)
-    .eq('week_start_date', weekStartDate)
-    .order('day_of_week', { ascending: true });
+    .order('week_start_date', { ascending: false })
+    .order('day_of_week', { ascending: true })
+    .limit(7);
 
   if (error || !data || data.length === 0) {
     console.error('Error fetching vibe scores:', error);
