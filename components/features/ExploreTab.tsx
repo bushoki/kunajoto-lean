@@ -108,7 +108,7 @@ export default function ExploreTab({
           break;
 
         case 'stay':
-          // Fetch Best to Stay In + Accommodations
+          // Fetch Best Place to Stay + Accommodations
           const [stayData, accomData] = await Promise.all([
             supabase.from('admin_stay_recommendations').select('*').eq('city', selectedCity).order('display_order'),
             supabase.from('admin_accommodations').select('*').eq('city', selectedCity).order('display_order')
@@ -475,12 +475,12 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
     case 'stay':
       return (
         <div className="space-y-6">
-          {/* Best to Stay In */}
+          {/* Best Place to Stay */}
           {data.stayRecommendations && data.stayRecommendations.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <span className="mr-3">🏘️</span>
-                Best to stay in
+                Best Place to Stay
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.stayRecommendations.map((rec: any) => (

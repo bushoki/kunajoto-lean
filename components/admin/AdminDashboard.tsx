@@ -31,7 +31,7 @@ type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_gu
 const CONTENT_TYPES = [
   { id: 'events', label: 'Events of the Month', icon: 'fa-calendar-days' },
   { id: 'arrival_tips', label: 'Best to Arrive On', icon: 'fa-plane-arrival' },
-  { id: 'stay_recommendations', label: 'Best to Stay In', icon: 'fa-hotel' },
+  { id: 'stay_recommendations', label: 'Best Place to Stay', icon: 'fa-hotel' },
   { id: 'tour_guides', label: 'Tour Guides Directory', icon: 'fa-map-location-dot' },
   { id: 'party_hosts', label: 'Party Hosts Directory', icon: 'fa-champagne-glasses' },
   { id: 'accommodations', label: 'Accommodations Directory', icon: 'fa-building' },
@@ -822,7 +822,7 @@ function StayRecommendationsManager({ city, userId }: { city: string; userId: st
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          Best to Stay In - {city}
+          Best Place to Stay - {city}
         </h2>
         <button
           onClick={() => {
