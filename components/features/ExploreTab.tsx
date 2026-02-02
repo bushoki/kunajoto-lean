@@ -1,7 +1,6 @@
 /**
  * ExploreTab - Kunajoto
- * Simplified, admin-driven content display
- * No vibe scores or forecasts - just venues and curated content
+ * Dynamic content display driven by admin dashboard
  */
 
 import React, { useState, useEffect } from 'react';
@@ -31,6 +30,8 @@ interface ExploreTabProps {
   onOpenPlans: () => void;
 }
 
+type ContentType = 'arrival' | 'stay' | 'tours' | 'party' | null;
+
 export default function ExploreTab({ 
   locationName,
   selectedCity,
@@ -45,6 +46,9 @@ export default function ExploreTab({
   const [loading, setLoading] = useState(true);
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [vibeData, setVibeData] = useState<any>(null);
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>(null);
+  const [dynamicContent, setDynamicContent] = useState<any>(null);
+  const [loadingDynamic, setLoadingDynamic] = useState(false);
 
   // Load content when city changes
   useEffect(() => {
@@ -72,6 +76,76 @@ export default function ExploreTab({
   const handleCitySelect = (city: string) => {
     onCityChange(city);
     setShowCitySelector(false);
+    setSelectedContentType(null);
+    setDynamicContent(null);
+  };
+
+  const handleActionClick = async (type: ContentType) => {
+    // Toggle off if clicking same button
+    if (selectedContentType === type) {
+      setSelectedContentType(null);
+      setDynamicContent(null);
+      return;
+    }
+
+    setSelectedContentType(type);
+    setLoadingDynamic(true);
+
+    try {
+      let data: any = {};
+
+      switch (type) {
+        case 'arrival':
+          // Fetch Best to Arrive On + Travel Services
+          const [arrivalData, travelData] = await Promise.all([
+            supabase.from('admin_arrival_tips').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_travel_services').select('*').eq('city', selectedCity).order('display_order')
+          ]);
+          data = {
+            arrivalTips: arrivalData.data || [],
+            travelServices: travelData.data || []
+          };
+          break;
+
+        case 'stay':
+          // Fetch Best to Stay In + Accommodations
+          const [stayData, accomData] = await Promise.all([
+            supabase.from('admin_stay_recommendations').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_accommodations').select('*').eq('city', selectedCity).order('display_order')
+          ]);
+          data = {
+            stayRecommendations: stayData.data || [],
+            accommodations: accomData.data || []
+          };
+          break;
+
+        case 'tours':
+          // Fetch Tour Guides Directory
+          const tourData = await supabase.from('admin_tour_guides').select('*').eq('city', selectedCity).order('display_order');
+          data = {
+            tourGuides: tourData.data || []
+          };
+          break;
+
+        case 'party':
+          // Fetch Party Hosts + Events of the Month
+          const [hostsData, eventsData] = await Promise.all([
+            supabase.from('admin_party_hosts').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_events').select('*').eq('city', selectedCity).order('event_date')
+          ]);
+          data = {
+            partyHosts: hostsData.data || [],
+            events: eventsData.data || []
+          };
+          break;
+      }
+
+      setDynamicContent(data);
+    } catch (error) {
+      console.error('Error loading dynamic content:', error);
+    } finally {
+      setLoadingDynamic(false);
+    }
   };
 
   // Show city selector if user not in target city
@@ -216,100 +290,6 @@ export default function ExploreTab({
           </section>
         )}
 
-        {/* Events of the Month */}
-        {content?.events && content.events.length > 0 && (
-          <section className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-3">🎉</span>
-              Events this Month
-            </h2>
-            <div className="space-y-4">
-              {content.events.slice(0, 5).map((event: any) => (
-                <div
-                  key={event.id}
-                  className="p-4 bg-gradient-to-r from-orange-50 to-white rounded-xl border border-orange-100 hover:shadow-md transition-shadow"
-                >
-                  <h3 className="font-semibold text-gray-900 text-lg">{event.title}</h3>
-                  {event.description && (
-                    <p className="text-gray-600 mt-2">{event.description}</p>
-                  )}
-                  {event.event_date && (
-                    <p className="text-sm text-orange-600 mt-2">
-                      📅 {new Date(event.event_date).toLocaleDateString()}
-                      {event.event_time && ` at ${event.event_time}`}
-                    </p>
-                  )}
-                  {event.external_link && (
-                    <a
-                      href={event.external_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      Learn More →
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Best to Arrive On */}
-        {content?.arrivalTips && content.arrivalTips.length > 0 && (
-          <section className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-3">✈️</span>
-              Best to arrive on
-            </h2>
-            <div className="space-y-3">
-              {content.arrivalTips.map((tip: any) => (
-                <div key={tip.id} className="p-4 bg-blue-50 rounded-xl">
-                  <p className="text-gray-900 font-medium">
-                    {tip.day_of_week && <span className="font-bold">{tip.day_of_week}: </span>}
-                    {tip.time_range && <span className="text-blue-600">{tip.time_range}</span>}
-                  </p>
-                  <p className="text-gray-700 mt-2">{tip.description}</p>
-                  {tip.reason && (
-                    <p className="text-sm text-gray-600 mt-2 italic">{tip.reason}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Best to Stay In */}
-        {content?.stayRecommendations && content.stayRecommendations.length > 0 && (
-          <section className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-3">🏘️</span>
-              Best to stay in
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {content.stayRecommendations.map((rec: any) => (
-                <div
-                  key={rec.id}
-                  className="p-4 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100 hover:shadow-md transition-shadow"
-                >
-                  <h3 className="font-bold text-gray-900 text-lg">{rec.neighborhood}</h3>
-                  <p className="text-gray-700 mt-2">{rec.description}</p>
-                  {rec.highlights && rec.highlights.length > 0 && (
-                    <ul className="mt-3 space-y-1">
-                      {rec.highlights.map((highlight: string, idx: number) => (
-                        <li key={idx} className="text-sm text-gray-600 flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Action Cards Grid */}
         <div className="grid grid-cols-2 gap-3 md:gap-4">
           {/* Flights & Airport Services */}
@@ -317,10 +297,8 @@ export default function ExploreTab({
             title="BOOK A FLIGHT, PRE-BOOK AIRPORT PICKUP & MORE"
             icon="✈️"
             bgColor="from-orange-500 to-orange-600"
-            onClick={() => {
-              // Navigate to travel services
-              console.log('Navigate to flights');
-            }}
+            isActive={selectedContentType === 'arrival'}
+            onClick={() => handleActionClick('arrival')}
           />
 
           {/* Tour Guides */}
@@ -328,10 +306,8 @@ export default function ExploreTab({
             title="EXPLORE LOCAL SITES WITH OUR AWARD-WINNING TOUR GUIDES!"
             icon="🗺️"
             bgColor="from-orange-500 to-orange-600"
-            onClick={() => {
-              // Navigate to tour guides
-              console.log('Navigate to tour guides');
-            }}
+            isActive={selectedContentType === 'tours'}
+            onClick={() => handleActionClick('tours')}
           />
 
           {/* Accommodations */}
@@ -339,10 +315,8 @@ export default function ExploreTab({
             title="STAY AT CAREFULLY VETTED AIRBNBs & HOTELS"
             icon="🏠"
             bgColor="from-orange-500 to-orange-600"
-            onClick={() => {
-              // Navigate to accommodations
-              console.log('Navigate to accommodations');
-            }}
+            isActive={selectedContentType === 'stay'}
+            onClick={() => handleActionClick('stay')}
           />
 
           {/* Party Hosts */}
@@ -350,14 +324,28 @@ export default function ExploreTab({
             title="PARTY LIKE A LOCAL WITH OUR EXPERIENCED HOSTS!"
             icon="🎉"
             bgColor="from-orange-500 to-orange-600"
-            onClick={() => {
-              // Navigate to party hosts
-              console.log('Navigate to party hosts');
-            }}
+            isActive={selectedContentType === 'party'}
+            onClick={() => handleActionClick('party')}
           />
         </div>
 
-
+        {/* Dynamic Content Display Area */}
+        {selectedContentType && (
+          <section className="bg-white rounded-2xl shadow-lg p-6 animate-fadeIn">
+            {loadingDynamic ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-orange-500 mx-auto mb-3"></div>
+                <p className="text-gray-600">Loading content...</p>
+              </div>
+            ) : (
+              <DynamicContentDisplay 
+                contentType={selectedContentType} 
+                data={dynamicContent} 
+                city={selectedCity}
+              />
+            )}
+          </section>
+        )}
       </div>
     </div>
   );
@@ -368,17 +356,322 @@ interface ActionCardProps {
   title: string;
   icon: string;
   bgColor: string;
+  isActive: boolean;
   onClick: () => void;
 }
 
-function ActionCard({ title, icon, bgColor, onClick }: ActionCardProps) {
+function ActionCard({ title, icon, bgColor, isActive, onClick }: ActionCardProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative overflow-hidden bg-gradient-to-r ${bgColor} text-white rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 min-h-[100px] md:min-h-[120px] flex flex-col items-center justify-center text-center`}
+      className={`relative overflow-hidden bg-gradient-to-r ${bgColor} text-white rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 min-h-[100px] md:min-h-[120px] flex flex-col items-center justify-center text-center ${
+        isActive ? 'ring-4 ring-yellow-400 ring-offset-2' : ''
+      }`}
     >
       <div className="text-2xl md:text-3xl mb-2">{icon}</div>
       <h3 className="font-bold text-xs md:text-sm leading-tight">{title}</h3>
+      {isActive && (
+        <div className="absolute top-2 right-2 bg-yellow-400 text-gray-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+          ✓
+        </div>
+      )}
     </button>
   );
+}
+
+// Dynamic Content Display Component
+interface DynamicContentDisplayProps {
+  contentType: ContentType;
+  data: any;
+  city: string;
+}
+
+function DynamicContentDisplay({ contentType, data, city }: DynamicContentDisplayProps) {
+  if (!data) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No content available for {city} yet.</p>
+      </div>
+    );
+  }
+
+  switch (contentType) {
+    case 'arrival':
+      return (
+        <div className="space-y-6">
+          {/* Best to Arrive On */}
+          {data.arrivalTips && data.arrivalTips.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="mr-3">✈️</span>
+                Best to arrive on
+              </h2>
+              <div className="space-y-3">
+                {data.arrivalTips.map((tip: any) => (
+                  <div key={tip.id} className="p-4 bg-blue-50 rounded-xl">
+                    <p className="text-gray-900 font-medium">
+                      {tip.day_of_week && <span className="font-bold">{tip.day_of_week}: </span>}
+                      {tip.time_range && <span className="text-blue-600">{tip.time_range}</span>}
+                    </p>
+                    <p className="text-gray-700 mt-2">{tip.description}</p>
+                    {tip.reason && (
+                      <p className="text-sm text-gray-600 mt-2 italic">{tip.reason}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Travel Services */}
+          {data.travelServices && data.travelServices.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                <span className="mr-2">🚗</span>
+                Travel Services
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.travelServices.map((service: any) => (
+                  <div key={service.id} className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-gray-900">{service.title}</h4>
+                      <span className="px-2 py-1 bg-indigo-200 text-indigo-800 text-xs rounded-full">
+                        {service.service_type}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 text-sm">{service.description}</p>
+                    {service.promo_code && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-mono rounded">
+                          {service.promo_code}
+                        </span>
+                        {service.discount_details && (
+                          <span className="text-xs text-gray-600">{service.discount_details}</span>
+                        )}
+                      </div>
+                    )}
+                    {service.affiliate_link && (
+                      <a
+                        href={service.affiliate_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+                      >
+                        Book Now →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.arrivalTips.length === 0 && data.travelServices.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No arrival information available for {city} yet.</p>
+          )}
+        </div>
+      );
+
+    case 'stay':
+      return (
+        <div className="space-y-6">
+          {/* Best to Stay In */}
+          {data.stayRecommendations && data.stayRecommendations.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="mr-3">🏘️</span>
+                Best to stay in
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.stayRecommendations.map((rec: any) => (
+                  <div
+                    key={rec.id}
+                    className="p-4 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100"
+                  >
+                    <h3 className="font-bold text-gray-900 text-lg">{rec.neighborhood}</h3>
+                    <p className="text-gray-700 mt-2">{rec.description}</p>
+                    {rec.highlights && rec.highlights.length > 0 && (
+                      <ul className="mt-3 space-y-1">
+                        {rec.highlights.map((highlight: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-600 flex items-start">
+                            <span className="text-green-600 mr-2">•</span>
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Accommodations Directory */}
+          {data.accommodations && data.accommodations.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                <span className="mr-2">🏨</span>
+                Recommended Accommodations
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.accommodations.map((accom: any) => (
+                  <div key={accom.id} className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-gray-900">{accom.name}</h4>
+                      <span className="px-2 py-1 bg-purple-200 text-purple-800 text-xs rounded-full">
+                        {accom.accommodation_type}
+                      </span>
+                    </div>
+                    {accom.neighborhood && (
+                      <p className="text-sm text-gray-600 mb-2">📍 {accom.neighborhood}</p>
+                    )}
+                    <p className="text-gray-700 text-sm">{accom.description}</p>
+                    {accom.price_range && (
+                      <p className="text-sm text-gray-600 mt-2">💰 {accom.price_range}</p>
+                    )}
+                    {accom.booking_link && (
+                      <a
+                        href={accom.booking_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-purple-600 hover:text-purple-700 font-medium text-sm"
+                      >
+                        View Details →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.stayRecommendations.length === 0 && data.accommodations.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No accommodation information available for {city} yet.</p>
+          )}
+        </div>
+      );
+
+    case 'tours':
+      return (
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <span className="mr-3">🗺️</span>
+            Tour Guides Directory
+          </h2>
+          {data.tourGuides && data.tourGuides.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.tourGuides.map((guide: any) => (
+                <div key={guide.id} className="p-4 bg-gradient-to-br from-yellow-50 to-white rounded-xl border border-yellow-100">
+                  <h3 className="font-bold text-gray-900 text-lg">{guide.name}</h3>
+                  {guide.specialties && (
+                    <p className="text-sm text-gray-600 mt-1">🎯 {guide.specialties}</p>
+                  )}
+                  <p className="text-gray-700 mt-2">{guide.bio}</p>
+                  {guide.contact_info && (
+                    <p className="text-sm text-gray-600 mt-3">📞 {guide.contact_info}</p>
+                  )}
+                  {guide.booking_link && (
+                    <a
+                      href={guide.booking_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 text-yellow-700 hover:text-yellow-800 font-medium text-sm"
+                    >
+                      Book Tour →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 py-8">No tour guides available for {city} yet.</p>
+          )}
+        </div>
+      );
+
+    case 'party':
+      return (
+        <div className="space-y-6">
+          {/* Party Hosts */}
+          {data.partyHosts && data.partyHosts.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <span className="mr-3">🎉</span>
+                Party Hosts Directory
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.partyHosts.map((host: any) => (
+                  <div key={host.id} className="p-4 bg-gradient-to-br from-pink-50 to-white rounded-xl border border-pink-100">
+                    <h3 className="font-bold text-gray-900 text-lg">{host.name}</h3>
+                    {host.specialties && (
+                      <p className="text-sm text-gray-600 mt-1">🎯 {host.specialties}</p>
+                    )}
+                    <p className="text-gray-700 mt-2">{host.bio}</p>
+                    {host.contact_info && (
+                      <p className="text-sm text-gray-600 mt-3">📞 {host.contact_info}</p>
+                    )}
+                    {host.booking_link && (
+                      <a
+                        href={host.booking_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-pink-700 hover:text-pink-800 font-medium text-sm"
+                      >
+                        Contact Host →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Events of the Month */}
+          {data.events && data.events.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                <span className="mr-2">📅</span>
+                Events this Month
+              </h3>
+              <div className="space-y-4">
+                {data.events.slice(0, 5).map((event: any) => (
+                  <div
+                    key={event.id}
+                    className="p-4 bg-gradient-to-r from-orange-50 to-white rounded-xl border border-orange-100"
+                  >
+                    <h4 className="font-semibold text-gray-900 text-lg">{event.title}</h4>
+                    {event.description && (
+                      <p className="text-gray-600 mt-2">{event.description}</p>
+                    )}
+                    {event.event_date && (
+                      <p className="text-sm text-orange-600 mt-2">
+                        📅 {new Date(event.event_date).toLocaleDateString()}
+                        {event.event_time && ` at ${event.event_time}`}
+                      </p>
+                    )}
+                    {event.external_link && (
+                      <a
+                        href={event.external_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium"
+                      >
+                        Learn More →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.partyHosts.length === 0 && data.events.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No party hosts or events available for {city} yet.</p>
+          )}
+        </div>
+      );
+
+    default:
+      return null;
+  }
 }
