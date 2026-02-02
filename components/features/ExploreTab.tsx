@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllContentForCity, getWeekVibeScoresForCity } from '../../services/adminContentService';
 import { supabase } from '../../src/supabaseClient';
+import { trackAndOpenLink } from '../../services/linkTrackingService';
 
 // Target cities
 const TARGET_CITIES = [
@@ -49,6 +50,16 @@ export default function ExploreTab({
   const [selectedContentType, setSelectedContentType] = useState<ContentType>(null);
   const [dynamicContent, setDynamicContent] = useState<any>(null);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   // Load content when city changes
   useEffect(() => {
@@ -342,6 +353,7 @@ export default function ExploreTab({
                 contentType={selectedContentType} 
                 data={dynamicContent} 
                 city={selectedCity}
+                userId={userId}
               />
             )}
           </section>
@@ -384,9 +396,10 @@ interface DynamicContentDisplayProps {
   contentType: ContentType;
   data: any;
   city: string;
+  userId: string | null;
 }
 
-function DynamicContentDisplay({ contentType, data, city }: DynamicContentDisplayProps) {
+function DynamicContentDisplay({ contentType, data, city, userId }: DynamicContentDisplayProps) {
   if (!data) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -451,14 +464,19 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
                       </div>
                     )}
                     {service.affiliate_link && (
-                      <a
-                        href={service.affiliate_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+                      <button
+                        onClick={() => trackAndOpenLink({
+                          linkUrl: service.affiliate_link,
+                          linkType: 'travel_service',
+                          contentId: service.id,
+                          contentType: 'admin_travel_services',
+                          city: city,
+                          userLocation: city
+                        }, userId || undefined)}
+                        className="inline-block mt-3 text-indigo-600 hover:text-indigo-700 font-medium text-sm cursor-pointer"
                       >
                         Book Now →
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
@@ -530,14 +548,19 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
                       <p className="text-sm text-gray-600 mt-2">💰 {accom.price_range}</p>
                     )}
                     {accom.booking_link && (
-                      <a
-                        href={accom.booking_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-purple-600 hover:text-purple-700 font-medium text-sm"
+                      <button
+                        onClick={() => trackAndOpenLink({
+                          linkUrl: accom.booking_link,
+                          linkType: 'accommodation',
+                          contentId: accom.id,
+                          contentType: 'admin_accommodations',
+                          city: city,
+                          userLocation: city
+                        }, userId || undefined)}
+                        className="inline-block mt-3 text-purple-600 hover:text-purple-700 font-medium text-sm cursor-pointer"
                       >
                         View Details →
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
@@ -571,14 +594,19 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
                     <p className="text-sm text-gray-600 mt-3">📞 {guide.contact_info}</p>
                   )}
                   {guide.booking_link && (
-                    <a
-                      href={guide.booking_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-yellow-700 hover:text-yellow-800 font-medium text-sm"
+                    <button
+                      onClick={() => trackAndOpenLink({
+                        linkUrl: guide.booking_link,
+                        linkType: 'tour_guide',
+                        contentId: guide.id,
+                        contentType: 'admin_tour_guides',
+                        city: city,
+                        userLocation: city
+                      }, userId || undefined)}
+                      className="inline-block mt-3 text-yellow-700 hover:text-yellow-800 font-medium text-sm cursor-pointer"
                     >
                       Book Tour →
-                    </a>
+                    </button>
                   )}
                 </div>
               ))}
@@ -611,14 +639,19 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
                       <p className="text-sm text-gray-600 mt-3">📞 {host.contact_info}</p>
                     )}
                     {host.booking_link && (
-                      <a
-                        href={host.booking_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-pink-700 hover:text-pink-800 font-medium text-sm"
+                      <button
+                        onClick={() => trackAndOpenLink({
+                          linkUrl: host.booking_link,
+                          linkType: 'party_host',
+                          contentId: host.id,
+                          contentType: 'admin_party_hosts',
+                          city: city,
+                          userLocation: city
+                        }, userId || undefined)}
+                        className="inline-block mt-3 text-pink-700 hover:text-pink-800 font-medium text-sm cursor-pointer"
                       >
                         Contact Host →
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
@@ -650,14 +683,19 @@ function DynamicContentDisplay({ contentType, data, city }: DynamicContentDispla
                       </p>
                     )}
                     {event.external_link && (
-                      <a
-                        href={event.external_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium"
+                      <button
+                        onClick={() => trackAndOpenLink({
+                          linkUrl: event.external_link,
+                          linkType: 'event',
+                          contentId: event.id,
+                          contentType: 'admin_events',
+                          city: city,
+                          userLocation: city
+                        }, userId || undefined)}
+                        className="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium cursor-pointer"
                       >
                         Learn More →
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}

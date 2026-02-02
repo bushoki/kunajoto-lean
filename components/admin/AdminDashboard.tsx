@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../src/supabaseClient';
 import { isUserAppAdmin } from '../../services/adminContentService';
+import LinkAnalyticsManager from './LinkAnalyticsManager';
 
 // Target cities
 const TARGET_CITIES = [
@@ -26,7 +27,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores';
+type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'analytics';
 
 const CONTENT_TYPES = [
   { id: 'events', label: 'Events of the Month', icon: 'fa-calendar-days' },
@@ -36,7 +37,8 @@ const CONTENT_TYPES = [
   { id: 'party_hosts', label: 'Party Hosts Directory', icon: 'fa-champagne-glasses' },
   { id: 'accommodations', label: 'Accommodations Directory', icon: 'fa-building' },
   { id: 'travel_services', label: 'Travel Services', icon: 'fa-plane' },
-  { id: 'vibe_scores', label: 'City Vibe Scores', icon: 'fa-chart-line' }
+  { id: 'vibe_scores', label: 'City Vibe Scores', icon: 'fa-chart-line' },
+  { id: 'analytics', label: 'Link Analytics', icon: 'fa-chart-bar' }
 ];
 
 export default function AdminDashboard({ userId, onClose }: AdminDashboardProps) {
@@ -110,6 +112,8 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
         return <TravelServicesManager city={selectedCity} userId={userId} />;
       case 'vibe_scores':
         return <VibeScoresManager city={selectedCity} userId={userId} />;
+      case 'analytics':
+        return <LinkAnalyticsManager city={selectedCity} userId={userId} />;
       default:
         return <div>Select a content type</div>;
     }
