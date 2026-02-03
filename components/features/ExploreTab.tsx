@@ -74,13 +74,13 @@ export default function ExploreTab({
     }
   }, [selectedCity]);
 
-  // Load default content on mount if selectedContentType is set
+  // Load content when city changes or selectedContentType changes
   useEffect(() => {
-    if (selectedContentType && selectedCity && !dynamicContent) {
-      // Load content without toggling
+    if (selectedContentType && selectedCity) {
+      // Load content for the selected type and city
       loadDynamicContent(selectedContentType);
     }
-  }, [selectedCity]); // Only run when city changes or on mount
+  }, [selectedCity, selectedContentType]); // Run when city or selection changes
 
   // Separate function to load content without toggle logic
   const loadDynamicContent = async (type: ContentType) => {
@@ -156,7 +156,8 @@ export default function ExploreTab({
   const handleCitySelect = (city: string) => {
     onCityChange(city);
     setShowCitySelector(false);
-    setSelectedContentType(null);
+    // Don't clear selectedContentType - maintain button selection across city changes
+    // Only clear dynamicContent to force reload for new city
     setDynamicContent(null);
   };
 
