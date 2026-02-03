@@ -76,10 +76,66 @@ export default function ExploreTab({
 
   // Load default content on mount if selectedContentType is set
   useEffect(() => {
-    if (selectedContentType && selectedCity) {
-      handleActionClick(selectedContentType);
+    if (selectedContentType && selectedCity && !dynamicContent) {
+      // Load content without toggling
+      loadDynamicContent(selectedContentType);
     }
   }, [selectedCity]); // Only run when city changes or on mount
+
+  // Separate function to load content without toggle logic
+  const loadDynamicContent = async (type: ContentType) => {
+    setLoadingDynamic(true);
+
+    try {
+      let data: any = {};
+
+      switch (type) {
+        case 'arrival':
+          const [arrivalData, travelData] = await Promise.all([
+            supabase.from('admin_arrival_tips').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_travel_services').select('*').eq('city', selectedCity).order('display_order')
+          ]);
+          data = {
+            arrivalTips: arrivalData.data || [],
+            travelServices: travelData.data || []
+          };
+          break;
+
+        case 'stay':
+          const [stayData, accomData] = await Promise.all([
+            supabase.from('admin_stay_recommendations').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_accommodations').select('*').eq('city', selectedCity).order('display_order')
+          ]);
+          data = {
+            stayRecommendations: stayData.data || [],
+            accommodations: accomData.data || []
+          };
+          break;
+
+        case 'tours':
+          const tourData = await supabase.from('admin_tour_guides').select('*').eq('city', selectedCity).order('display_order');
+          data = { tourGuides: tourData.data || [] };
+          break;
+
+        case 'party':
+          const [partyData, eventsData] = await Promise.all([
+            supabase.from('admin_party_hosts').select('*').eq('city', selectedCity).order('display_order'),
+            supabase.from('admin_events').select('*').eq('city', selectedCity).order('display_order')
+          ]);
+          data = {
+            partyHosts: partyData.data || [],
+            events: eventsData.data || []
+          };
+          break;
+      }
+
+      setDynamicContent(data);
+    } catch (error) {
+      console.error('Error loading dynamic content:', error);
+    } finally {
+      setLoadingDynamic(false);
+    }
+  };
 
   const loadContentForCity = async (city: string) => {
     setLoading(true);
@@ -115,63 +171,9 @@ export default function ExploreTab({
 
     setSelectedContentType(type);
     localStorage.setItem('kunajoto_selected_content_type', type);
-    setLoadingDynamic(true);
-
-    try {
-      let data: any = {};
-
-      switch (type) {
-        case 'arrival':
-          // Fetch Best to Arrive On + Travel Services
-          const [arrivalData, travelData] = await Promise.all([
-            supabase.from('admin_arrival_tips').select('*').eq('city', selectedCity).order('display_order'),
-            supabase.from('admin_travel_services').select('*').eq('city', selectedCity).order('display_order')
-          ]);
-          data = {
-            arrivalTips: arrivalData.data || [],
-            travelServices: travelData.data || []
-          };
-          break;
-
-        case 'stay':
-          // Fetch Best Place to Stay + Accommodations
-          const [stayData, accomData] = await Promise.all([
-            supabase.from('admin_stay_recommendations').select('*').eq('city', selectedCity).order('display_order'),
-            supabase.from('admin_accommodations').select('*').eq('city', selectedCity).order('display_order')
-          ]);
-          data = {
-            stayRecommendations: stayData.data || [],
-            accommodations: accomData.data || []
-          };
-          break;
-
-        case 'tours':
-          // Fetch Tour Guides Directory
-          const tourData = await supabase.from('admin_tour_guides').select('*').eq('city', selectedCity).order('display_order');
-          data = {
-            tourGuides: tourData.data || []
-          };
-          break;
-
-        case 'party':
-          // Fetch Party Hosts + Events of the Month
-          const [hostsData, eventsData] = await Promise.all([
-            supabase.from('admin_party_hosts').select('*').eq('city', selectedCity).order('display_order'),
-            supabase.from('admin_events').select('*').eq('city', selectedCity).order('event_date')
-          ]);
-          data = {
-            partyHosts: hostsData.data || [],
-            events: eventsData.data || []
-          };
-          break;
-      }
-
-      setDynamicContent(data);
-    } catch (error) {
-      console.error('Error loading dynamic content:', error);
-    } finally {
-      setLoadingDynamic(false);
-    }
+    
+    // Use the shared loadDynamicContent function
+    await loadDynamicContent(type);
   };
 
   // Show city selector if user not in target city
