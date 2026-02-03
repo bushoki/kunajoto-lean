@@ -435,6 +435,8 @@ const App: React.FC = () => {
       setFavorites([]);
       setAppState(AppState.AUTH_REQUIRED);
       setCurrentTab('explore');
+      // Reset Explore Tab content selection to default on logout
+      localStorage.removeItem('kunajoto_selected_content_type');
     } catch (error) {
       console.error('[App] Logout error:', error);
     }

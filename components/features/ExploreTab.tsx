@@ -17,7 +17,9 @@ const TARGET_CITIES = [
   'Austin',
   'New York City',
   'Nairobi',
-  'Kinshasa'
+  'Kinshasa',
+  'Zanzibar',
+  'Kuala Lumpur'
 ];
 
 interface ExploreTabProps {
@@ -47,7 +49,11 @@ export default function ExploreTab({
   const [loading, setLoading] = useState(true);
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [vibeData, setVibeData] = useState<any>(null);
-  const [selectedContentType, setSelectedContentType] = useState<ContentType>(null);
+  // Initialize with localStorage or default to 'arrival' (Book a Flight)
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>(() => {
+    const saved = localStorage.getItem('kunajoto_selected_content_type');
+    return (saved as ContentType) || 'arrival';
+  });
   const [dynamicContent, setDynamicContent] = useState<any>(null);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -67,6 +73,13 @@ export default function ExploreTab({
       loadContentForCity(selectedCity);
     }
   }, [selectedCity]);
+
+  // Load default content on mount if selectedContentType is set
+  useEffect(() => {
+    if (selectedContentType && selectedCity) {
+      handleActionClick(selectedContentType);
+    }
+  }, [selectedCity]); // Only run when city changes or on mount
 
   const loadContentForCity = async (city: string) => {
     setLoading(true);
@@ -96,10 +109,12 @@ export default function ExploreTab({
     if (selectedContentType === type) {
       setSelectedContentType(null);
       setDynamicContent(null);
+      localStorage.removeItem('kunajoto_selected_content_type');
       return;
     }
 
     setSelectedContentType(type);
+    localStorage.setItem('kunajoto_selected_content_type', type);
     setLoadingDynamic(true);
 
     try {

@@ -17,7 +17,9 @@ const TARGET_CITIES = [
   'Austin',
   'New York City',
   'Nairobi',
-  'Kinshasa'
+  'Kinshasa',
+  'Zanzibar',
+  'Kuala Lumpur'
 ];
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
