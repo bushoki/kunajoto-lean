@@ -2466,12 +2466,22 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
       }
     } else {
       // Insert
+      // Calculate week_start_date (Monday of current week)
+      const now = new Date();
+      const currentDay = now.getDay(); // 0=Sunday, 1=Monday, etc.
+      const daysToMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - daysToMonday);
+      weekStart.setHours(0, 0, 0, 0);
+      const weekStartDate = weekStart.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
       const { error } = await supabase
         .from('admin_city_vibe_scores')
         .insert({
           city,
           day_of_week: dayIndex,
           vibe_score: score,
+          week_start_date: weekStartDate,
           created_by: userId
         });
 
