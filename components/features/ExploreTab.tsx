@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { getAllContentForCity, getWeekVibeScoresForCity } from '../../services/adminContentService';
 import { supabase } from '../../src/supabaseClient';
 import { trackAndOpenLink } from '../../services/linkTrackingService';
+import { linkify } from '../../utils/linkify';
 
 // Target cities
 const TARGET_CITIES = [
@@ -444,7 +445,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                       {tip.day_of_week && <span className="font-bold">{tip.day_of_week}: </span>}
                       {tip.time_range && <span className="text-blue-600">{tip.time_range}</span>}
                     </p>
-                    <p className="text-gray-700 mt-2">{tip.description}</p>
+                    <p className="text-gray-700 mt-2">{linkify(tip.description)}</p>
                     {tip.reason && (
                       <p className="text-sm text-gray-600 mt-2 italic">{tip.reason}</p>
                     )}
@@ -470,7 +471,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                         {service.service_type}
                       </span>
                     </div>
-                    <p className="text-gray-700 text-sm">{service.description}</p>
+                    <p className="text-gray-700 text-sm">{linkify(service.description)}</p>
                     {service.promo_code && (
                       <div className="mt-2 flex items-center gap-2">
                         <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-mono rounded">
@@ -525,7 +526,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                     className="p-4 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100"
                   >
                     <h3 className="font-bold text-gray-900 text-lg">{rec.neighborhood}</h3>
-                    <p className="text-gray-700 mt-2">{rec.description}</p>
+                    <p className="text-gray-700 mt-2">{linkify(rec.description)}</p>
                     {rec.highlights && rec.highlights.length > 0 && (
                       <ul className="mt-3 space-y-1">
                         {rec.highlights.map((highlight: string, idx: number) => (
@@ -561,7 +562,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                     {accom.neighborhood && (
                       <p className="text-sm text-gray-600 mb-2">📍 {accom.neighborhood}</p>
                     )}
-                    <p className="text-gray-700 text-sm">{accom.description}</p>
+                    <p className="text-gray-700 text-sm">{linkify(accom.description)}</p>
                     {accom.price_range && (
                       <p className="text-sm text-gray-600 mt-2">💰 {accom.price_range}</p>
                     )}
@@ -607,7 +608,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                   {guide.specialties && (
                     <p className="text-sm text-gray-600 mt-1">🎯 {guide.specialties}</p>
                   )}
-                  <p className="text-gray-700 mt-2">{guide.bio}</p>
+                  <p className="text-gray-700 mt-2">{linkify(guide.bio)}</p>
                   {guide.contact_info && (
                     <p className="text-sm text-gray-600 mt-3">📞 {guide.contact_info}</p>
                   )}
@@ -652,7 +653,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                     {host.specialties && (
                       <p className="text-sm text-gray-600 mt-1">🎯 {host.specialties}</p>
                     )}
-                    <p className="text-gray-700 mt-2">{host.bio}</p>
+                    <p className="text-gray-700 mt-2">{linkify(host.bio)}</p>
                     {host.contact_info && (
                       <p className="text-sm text-gray-600 mt-3">📞 {host.contact_info}</p>
                     )}
@@ -692,7 +693,7 @@ function DynamicContentDisplay({ contentType, data, city, userId }: DynamicConte
                   >
                     <h4 className="font-semibold text-gray-900 text-lg">{event.title}</h4>
                     {event.description && (
-                      <p className="text-gray-600 mt-2">{event.description}</p>
+                      <p className="text-gray-600 mt-2">{linkify(event.description)}</p>
                     )}
                     {event.event_date && (
                       <p className="text-sm text-orange-600 mt-2">
