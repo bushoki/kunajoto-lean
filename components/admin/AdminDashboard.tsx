@@ -55,7 +55,24 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
 
   const checkAdminStatus = async () => {
     console.log('🔐 [AdminDashboard] Checking admin status for userId:', userId);
-    const adminStatus = await isUserAppAdmin(userId);
+    
+    // If userId is not provided, try to get it from the current session
+    let effectiveUserId = userId;
+    if (!effectiveUserId) {
+      console.log('⚠️ [AdminDashboard] userId not provided, fetching from session');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        effectiveUserId = session.user.id;
+        console.log('✅ [AdminDashboard] Got userId from session:', effectiveUserId);
+      } else {
+        console.error('❌ [AdminDashboard] No session found');
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+    }
+    
+    const adminStatus = await isUserAppAdmin(effectiveUserId);
     console.log('🔐 [AdminDashboard] Admin check result:', adminStatus);
     setIsAdmin(adminStatus);
     setLoading(false);
