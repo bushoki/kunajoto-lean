@@ -29,7 +29,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'analytics';
+type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'city_media' | 'analytics';
 
 const CONTENT_TYPES = [
   { id: 'events', label: 'Events of the Month', icon: 'fa-calendar-days' },
@@ -40,6 +40,7 @@ const CONTENT_TYPES = [
   { id: 'accommodations', label: 'Accommodations Directory', icon: 'fa-building' },
   { id: 'travel_services', label: 'Travel Services', icon: 'fa-plane' },
   { id: 'vibe_scores', label: 'City Vibe Scores', icon: 'fa-chart-line' },
+  { id: 'city_media', label: 'City Media Content', icon: 'fa-photo-film' },
   { id: 'analytics', label: 'Link Analytics', icon: 'fa-chart-bar' }
 ];
 
@@ -131,6 +132,8 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
         return <TravelServicesManager city={selectedCity} userId={userId} />;
       case 'vibe_scores':
         return <VibeScoresManager city={selectedCity} userId={userId} />;
+      case 'city_media':
+        return <CityMediaManager city={selectedCity} userId={userId} />;
       case 'analytics':
         return <LinkAnalyticsManager city={selectedCity} userId={userId} />;
       default:
@@ -2585,3 +2588,6 @@ function VibeScoresManager({ city, userId }: { city: string; userId: string }) {
     </div>
   );
 }
+
+// 9. City Media Manager
+import CityMediaManager from './CityMediaManager';

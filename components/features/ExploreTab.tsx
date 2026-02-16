@@ -8,6 +8,8 @@ import { getAllContentForCity, getWeekVibeScoresForCity } from '../../services/a
 import { supabase } from '../../src/supabaseClient';
 import { trackAndOpenLink } from '../../services/linkTrackingService';
 import { linkify } from '../../utils/linkify';
+import { getCityMedia, CityMedia } from '../../services/cityMediaService';
+import CityMediaDisplay from './CityMediaDisplay';
 
 // Target cities
 const TARGET_CITIES = [
@@ -58,6 +60,7 @@ export default function ExploreTab({
   const [dynamicContent, setDynamicContent] = useState<any>(null);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [cityMedia, setCityMedia] = useState<CityMedia[]>([]);
 
   // Get current user ID
   useEffect(() => {
@@ -141,12 +144,14 @@ export default function ExploreTab({
   const loadContentForCity = async (city: string) => {
     setLoading(true);
     try {
-      const [contentData, vibeScores] = await Promise.all([
+      const [contentData, vibeScores, mediaData] = await Promise.all([
         getAllContentForCity(city),
-        getWeekVibeScoresForCity(city)
+        getWeekVibeScoresForCity(city),
+        getCityMedia(city)
       ]);
       setContent(contentData);
       setVibeData(vibeScores);
+      setCityMedia(mediaData);
     } catch (error) {
       console.error('Error loading content:', error);
     } finally {
@@ -318,6 +323,11 @@ export default function ExploreTab({
               })}
             </div>
           </section>
+        )}
+
+        {/* City Media Content */}
+        {cityMedia.length > 0 && (
+          <CityMediaDisplay mediaItems={cityMedia} />
         )}
 
         {/* Action Cards Grid */}
