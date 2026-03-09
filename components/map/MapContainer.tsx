@@ -18,6 +18,7 @@ interface MapContainerProps {
   onBoundsChanged?: (bounds: { north: number; south: number; east: number; west: number }, zoom: number) => void;
   hasInitiallyCentered?: boolean;
   onCenterComplete?: () => void;
+  onMapReady?: (mapInstance: any) => void;
 }
 
 // --- CUSTOM MAP STYLES ---
@@ -135,7 +136,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
   onRetryLocation,
   onBoundsChanged,
   hasInitiallyCentered = false,
-  onCenterComplete
+  onCenterComplete,
+  onMapReady
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<any>(null);
@@ -216,6 +218,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
     const map = new google.maps.Map(mapRef.current, mapOptions);
     googleMapRef.current = map;
+    // Notify parent that map is ready with the map instance
+    if (onMapReady) onMapReady(map);
 
     // Listeners
     map.addListener('idle', () => {

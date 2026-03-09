@@ -3,6 +3,10 @@ import { AppState, UserRole, Venue, Coordinates, MapState, ThemePreference, Serv
 import { MOCK_VENUES, PARTNER_SERVICES, MOCK_SUBSCRIPTION_PLANS, MOCK_TICKER_SOURCES, getVibeColor, ONBOARDING_SLIDES } from './constants';
 import { t, setLocale } from './translations';
 import MapContainer from './components/map/MapContainer';
+import ItineraryLayer from './components/map/ItineraryLayer';
+import ItinerarySidebar from './components/map/ItinerarySidebar';
+import SubscribeToUnlockModal from './components/map/SubscribeToUnlockModal';
+import { itineraryService } from './services/itineraryService';
 import TopBar from './components/layout/TopBar';
 import BottomNav from './components/layout/BottomNav';
 import VenueDetail from './components/features/VenueDetail';
@@ -89,6 +93,11 @@ const App: React.FC = () => {
 
   // City Vibe Score State
   const [cityVibeScore, setCityVibeScore] = useState<number | undefined>(undefined);
+  // Itinerary State
+  const [itineraries, setItineraries] = useState<any[]>([]);
+  const [selectedItinerary, setSelectedItinerary] = useState<any | null>(null);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
   // Handle onboarding completion
   const handleOnboardingComplete = (skipped: boolean) => {
@@ -465,6 +474,14 @@ const App: React.FC = () => {
     setCurrentTab(tab);
   };
 
+  // Load itineraries when city changes
+  useEffect(() => {
+    if (!locationName || locationName === 'Locating...') return;
+    itineraryService.getItinerariesForCity(locationName)
+      .then(data => setItineraries(data))
+      .catch(err => console.warn('[App] Itinerary load error:', err));
+  }, [locationName, userId]);
+
   const activeTickerMessages = tickerSources
     .filter(s => s.isActive)
     .map(s => s.content || s.name);
@@ -548,17 +565,39 @@ const App: React.FC = () => {
           <div className="absolute top-0 left-0 right-0 bottom-20 overflow-y-auto">
             {currentTab === 'map' && (
               viewMode === 'MAP' ? (
-                <MapContainer
-                  venues={venues}
-                  onVenueSelect={setSelectedVenue}
-                  userLocation={userLocation}
-                  mapState={mapState}
-                  setMapState={setMapState}
-                  hasInitiallyCentered={hasInitiallyCentered}
-                  setHasInitiallyCentered={setHasInitiallyCentered}
-                  mapTheme={mapTheme}
-                  onBoundsChanged={handleMapBoundsChanged}
-                />
+                <>
+                  <MapContainer
+                    venues={venues}
+                    onVenueSelect={setSelectedVenue}
+                    userLocation={userLocation}
+                    mapState={mapState}
+                    setMapState={setMapState}
+                    hasInitiallyCentered={hasInitiallyCentered}
+                    setHasInitiallyCentered={setHasInitiallyCentered}
+                    mapTheme={mapTheme}
+                    onBoundsChanged={handleMapBoundsChanged}
+                    onMapReady={setMapInstance}
+                  />
+                  {/* Itinerary Sidebar — overlaid on top-left of map */}
+                  {itineraries.length > 0 && (
+                    <ItinerarySidebar
+                      itineraries={itineraries}
+                      selectedItinerary={selectedItinerary}
+                      onSelect={setSelectedItinerary}
+                      isAuthenticated={isAuthenticated}
+                      onSubscribeClick={() => setShowSubscribeModal(true)}
+                    />
+                  )}
+                  {/* Itinerary Layer — draws routes on the Google Map */}
+                  {mapInstance && selectedItinerary && (
+                    <ItineraryLayer
+                      map={mapInstance}
+                      itinerary={selectedItinerary}
+                      isAuthenticated={isAuthenticated}
+                      onSubscribeClick={() => setShowSubscribeModal(true)}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="h-full overflow-y-auto p-4 bg-gray-50">
                   <h2 className="text-xl font-bold mb-4">Venues List</h2>
@@ -721,6 +760,22 @@ const App: React.FC = () => {
             }
           }}
           onClose={() => setShowPlanSelection(false)}
+        />
+      )}
+
+      {/* Subscribe to Unlock Modal for paid itineraries */}
+      {showSubscribeModal && (
+        <SubscribeToUnlockModal
+          onClose={() => setShowSubscribeModal(false)}
+          onSubscribe={() => {
+            setShowSubscribeModal(false);
+            // TODO: Connect to payment flow — insert row into itinerary_access on success
+            if (!isAuthenticated) {
+              setAppState(AppState.AUTH_REQUIRED);
+            } else {
+              setAppState(AppState.PLANS);
+            }
+          }}
         />
       )}
 

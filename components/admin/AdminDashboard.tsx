@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../src/supabaseClient';
 import { isUserAppAdmin } from '../../services/adminContentService';
 import LinkAnalyticsManager from './LinkAnalyticsManager';
+import ItineraryManager from './ItineraryManager';
 
 // Target cities
 const TARGET_CITIES = [
@@ -29,7 +30,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'city_media' | 'analytics';
+type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'city_media' | 'analytics' | 'itineraries';
 
 const CONTENT_TYPES = [
   { id: 'events', label: 'Events of the Month', icon: 'fa-calendar-days' },
@@ -41,7 +42,8 @@ const CONTENT_TYPES = [
   { id: 'travel_services', label: 'Travel Services', icon: 'fa-plane' },
   { id: 'vibe_scores', label: 'City Vibe Scores', icon: 'fa-chart-line' },
   { id: 'city_media', label: 'City Media Content', icon: 'fa-photo-film' },
-  { id: 'analytics', label: 'Link Analytics', icon: 'fa-chart-bar' }
+  { id: 'analytics', label: 'Link Analytics', icon: 'fa-chart-bar' },
+  { id: 'itineraries', label: 'City Itineraries', icon: 'fa-route' }
 ];
 
 export default function AdminDashboard({ userId, onClose }: AdminDashboardProps) {
@@ -136,6 +138,8 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
         return <CityMediaManager city={selectedCity} userId={userId} />;
       case 'analytics':
         return <LinkAnalyticsManager city={selectedCity} userId={userId} />;
+      case 'itineraries':
+        return <ItineraryManager adminUserId={userId} />;
       default:
         return <div>Select a content type</div>;
     }
