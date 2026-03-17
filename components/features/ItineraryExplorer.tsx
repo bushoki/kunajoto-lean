@@ -7,17 +7,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../src/supabaseClient';
 
+// ── DB-aligned interfaces ────────────────────────────────────────────────────
+
 interface Stop {
   id: string;
-  venue_name: string;
-  description: string;
+  itinerary_id: string;
+  venue_id?: string;
+  stop_order: number;
+  is_starting_point: boolean;
+  is_ending_point: boolean;
+  name: string;
+  description: string | null;
   arrive_time: string | null;
   leave_time: string | null;
-  is_start: boolean;
-  is_end: boolean;
-  order_index: number;
   latitude: number | null;
   longitude: number | null;
+  duration_minutes: number | null;
 }
 
 interface Itinerary {
@@ -26,13 +31,14 @@ interface Itinerary {
   description: string | null;
   city: string;
   is_paid: boolean;
-  route_color: string;
-  timing_tags: string[];
-  music_tags: string[];
+  color: string | null;           // DB column: color
+  time_preferences: string[];     // DB column: time_preferences
+  music_genres: string[];         // DB column: music_genres
+  vibe_tags: string[];            // DB column: vibe_tags
   crowd_density: string | null;
   budget_tier: string | null;
   is_featured: boolean;
-  stops?: Stop[];
+  display_order: number;
   has_access?: boolean;
 }
 
@@ -109,7 +115,7 @@ export default function ItineraryExplorer({ city, userId, isAuthenticated, onReq
           // Admins have access to everything
           itin.forEach(i => { accessMap[i.id] = true; });
         } else {
-          // Check explicit access grants
+          // Check explicit access grants for paid itineraries
           const paidIds = itin.filter(i => i.is_paid).map(i => i.id);
           if (paidIds.length > 0) {
             const { data: access } = await supabase
@@ -140,12 +146,17 @@ export default function ItineraryExplorer({ city, userId, isAuthenticated, onReq
     if (stopsMap[itineraryId]) return; // already loaded
     setLoadingStops(itineraryId);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('itinerary_stops')
         .select('*')
         .eq('itinerary_id', itineraryId)
-        .order('order_index', { ascending: true });
-      setStopsMap(prev => ({ ...prev, [itineraryId]: data || [] }));
+        .order('stop_order', { ascending: true }); // ← correct DB column
+      if (error) {
+        console.error('[ItineraryExplorer] loadStops error:', error.message);
+        setStopsMap(prev => ({ ...prev, [itineraryId]: [] }));
+      } else {
+        setStopsMap(prev => ({ ...prev, [itineraryId]: data || [] }));
+      }
     } catch {
       setStopsMap(prev => ({ ...prev, [itineraryId]: [] }));
     } finally {
@@ -214,10 +225,9 @@ export default function ItineraryExplorer({ city, userId, isAuthenticated, onReq
       {lockedItinerary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-            {/* Preview header with route color */}
             <div
               className="h-2"
-              style={{ backgroundColor: lockedItinerary.route_color || '#FF6B35' }}
+              style={{ backgroundColor: lockedItinerary.color || '#FF6B35' }}
             />
             <div className="p-6">
               <div className="text-center mb-5">
@@ -228,14 +238,13 @@ export default function ItineraryExplorer({ city, userId, isAuthenticated, onReq
                 <p className="text-gray-500 text-sm mt-1">This is a premium itinerary</p>
               </div>
 
-              {/* Tags preview */}
               <div className="flex flex-wrap gap-2 justify-center mb-5">
-                {lockedItinerary.timing_tags?.slice(0, 3).map(tag => (
+                {lockedItinerary.time_preferences?.slice(0, 3).map(tag => (
                   <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
                     {tag}
                   </span>
                 ))}
-                {lockedItinerary.music_tags?.slice(0, 2).map(tag => (
+                {lockedItinerary.music_genres?.slice(0, 2).map(tag => (
                   <span key={tag} className="px-3 py-1 bg-orange-50 text-primary rounded-full text-xs font-medium">
                     {tag}
                   </span>
@@ -296,7 +305,7 @@ function ItineraryCard({
   loadingStops: boolean;
   onToggle: () => void;
 }) {
-  const color = itinerary.route_color || '#FF6B35';
+  const color = itinerary.color || '#FF6B35';
   const isLocked = itinerary.is_paid && !itinerary.has_access;
 
   return (
@@ -342,10 +351,10 @@ function ItineraryCard({
 
           {/* Tags row */}
           <div className="flex flex-wrap gap-1 mt-1.5">
-            {itinerary.timing_tags?.slice(0, 2).map(tag => (
+            {itinerary.time_preferences?.slice(0, 2).map(tag => (
               <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">{tag}</span>
             ))}
-            {itinerary.music_tags?.slice(0, 2).map(tag => (
+            {itinerary.music_genres?.slice(0, 2).map(tag => (
               <span key={tag} className="px-2 py-0.5 bg-orange-50 text-orange-500 text-xs rounded-full">{tag}</span>
             ))}
             {itinerary.crowd_density && (
@@ -401,11 +410,17 @@ function ItineraryCard({
                     {/* Timeline dot */}
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 z-10 shadow-sm"
-                      style={{ backgroundColor: stop.is_start ? color : stop.is_end ? '#1F2937' : color + 'CC' }}
+                      style={{
+                        backgroundColor: stop.is_starting_point
+                          ? color
+                          : stop.is_ending_point
+                          ? '#1F2937'
+                          : color + 'CC',
+                      }}
                     >
-                      {stop.is_start ? (
+                      {stop.is_starting_point ? (
                         <i className="fa-solid fa-play text-xs"></i>
-                      ) : stop.is_end ? (
+                      ) : stop.is_ending_point ? (
                         <i className="fa-solid fa-flag-checkered text-xs"></i>
                       ) : (
                         i + 1
@@ -416,7 +431,7 @@ function ItineraryCard({
                     <div className="flex-1 bg-gray-50 rounded-xl p-3 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-semibold text-gray-900 text-sm">{stop.venue_name}</p>
+                          <p className="font-semibold text-gray-900 text-sm">{stop.name}</p>
                           {(stop.arrive_time || stop.leave_time) && (
                             <p className="text-xs text-gray-400 mt-0.5">
                               {stop.arrive_time && <span>Arrive: <strong>{stop.arrive_time}</strong></span>}
@@ -425,10 +440,10 @@ function ItineraryCard({
                             </p>
                           )}
                         </div>
-                        {stop.is_start && (
+                        {stop.is_starting_point && (
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full flex-shrink-0">START</span>
                         )}
-                        {stop.is_end && (
+                        {stop.is_ending_point && (
                           <span className="px-2 py-0.5 bg-gray-800 text-white text-xs font-bold rounded-full flex-shrink-0">END</span>
                         )}
                       </div>

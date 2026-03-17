@@ -26,8 +26,9 @@ export default defineConfig(({ mode }) => {
 
     return {
       server: {
-        port: 3000,
-        host: '0.0.0.0',allowedHosts: ['3000-i84pja3c42esv3sdda6ju-cc9e6f5c.manusvm.computer'],
+        port: 5173,
+        host: '0.0.0.0',
+        allowedHosts: 'all',
       },
 
       plugins: [

@@ -95,8 +95,9 @@ const App: React.FC = () => {
   const [cityVibeScore, setCityVibeScore] = useState<number | undefined>(undefined);
   // Itinerary State
   const [itineraries, setItineraries] = useState<any[]>([]);
-  const [selectedItinerary, setSelectedItinerary] = useState<any | null>(null);
+  const [activeItineraryId, setActiveItineraryId] = useState<string | null>(null);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [subscribeTargetItinerary, setSubscribeTargetItinerary] = useState<any | null>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
 
   // Handle onboarding completion
@@ -613,19 +614,21 @@ const App: React.FC = () => {
                   {itineraries.length > 0 && (
                     <ItinerarySidebar
                       itineraries={itineraries}
-                      selectedItinerary={selectedItinerary}
-                      onSelect={setSelectedItinerary}
-                      isAuthenticated={isAuthenticated}
-                      onSubscribeClick={() => setShowSubscribeModal(true)}
+                      activeItineraryId={activeItineraryId}
+                      onSelect={setActiveItineraryId}
+                      onSubscribeClick={(itin) => { setSubscribeTargetItinerary(itin); setShowSubscribeModal(true); }}
+                      isLoading={false}
+                      userHasPrefs={false}
                     />
                   )}
                   {/* Itinerary Layer — draws routes on the Google Map */}
-                  {mapInstance && selectedItinerary && (
+                  {mapInstance && itineraries.length > 0 && (
                     <ItineraryLayer
                       map={mapInstance}
-                      itinerary={selectedItinerary}
-                      isAuthenticated={isAuthenticated}
-                      onSubscribeClick={() => setShowSubscribeModal(true)}
+                      itineraries={itineraries}
+                      activeItineraryId={activeItineraryId}
+                      onItinerarySelect={setActiveItineraryId}
+                      onSubscribeClick={(itin) => { setSubscribeTargetItinerary(itin); setShowSubscribeModal(true); }}
                     />
                   )}
                 </>
@@ -795,12 +798,15 @@ const App: React.FC = () => {
       )}
 
       {/* Subscribe to Unlock Modal for paid itineraries */}
-      {showSubscribeModal && (
+      {showSubscribeModal && subscribeTargetItinerary && (
         <SubscribeToUnlockModal
-          onClose={() => setShowSubscribeModal(false)}
+          itinerary={subscribeTargetItinerary}
+          isAuthenticated={isAuthenticated}
+          onSignIn={() => { setShowSubscribeModal(false); setAppState(AppState.AUTH_REQUIRED); }}
+          onClose={() => { setShowSubscribeModal(false); setSubscribeTargetItinerary(null); }}
           onSubscribe={() => {
             setShowSubscribeModal(false);
-            // TODO: Connect to payment flow — insert row into itinerary_access on success
+            setSubscribeTargetItinerary(null);
             if (!isAuthenticated) {
               setAppState(AppState.AUTH_REQUIRED);
             } else {
