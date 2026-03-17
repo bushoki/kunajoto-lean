@@ -277,6 +277,31 @@ const App: React.FC = () => {
     loadVenues();
   }, [isAuthenticated]);
 
+  // City center coordinates for fallback when geolocation is unavailable
+  const CITY_FALLBACK_COORDS: Record<string, { lat: number; lng: number }> = {
+    'Mombasa': { lat: -4.0435, lng: 39.6682 },
+    'Nairobi': { lat: -1.2921, lng: 36.8219 },
+    'Kinshasa': { lat: -4.3217, lng: 15.3222 },
+    'Accra': { lat: 5.6037, lng: -0.1870 },
+    'Lagos': { lat: 6.5244, lng: 3.3792 },
+    'Cape Town': { lat: -33.9249, lng: 18.4241 },
+    'Johannesburg': { lat: -26.2041, lng: 28.0473 },
+    'Dar es Salaam': { lat: -6.7924, lng: 39.2083 },
+    'Kampala': { lat: 0.3476, lng: 32.5825 },
+    'Addis Ababa': { lat: 9.0320, lng: 38.7469 },
+    'New York City': { lat: 40.7128, lng: -74.0060 },
+    'Los Angeles': { lat: 34.0522, lng: -118.2437 },
+  };
+
+  const applyFallbackLocation = (city?: string) => {
+    const targetCity = city || getSelectedCity() || TARGET_CITIES[0];
+    const coords = CITY_FALLBACK_COORDS[targetCity] || { lat: -4.0435, lng: 39.6682 };
+    setUserLocation(coords);
+    setMapState({ center: coords, zoom: 13 });
+    setHasInitiallyCentered(true);
+    console.log('📍 [App] Using fallback location for', targetCity, coords);
+  };
+
   // Geolocation - Simple version from kunajoto-fire-
   useEffect(() => {
     if (navigator.geolocation && !locationFoundRef.current) {
@@ -287,7 +312,9 @@ const App: React.FC = () => {
         if (!locationFoundRef.current) {
           console.warn('⏱️ [App] Geolocation timeout, using default city');
           locationFoundRef.current = true;
-          setLocationName(TARGET_CITIES[0]);
+          const defaultCity = getSelectedCity() || TARGET_CITIES[0];
+          setLocationName(defaultCity);
+          applyFallbackLocation(defaultCity);
           if (!getSelectedCity()) {
             handleCitySelection(TARGET_CITIES[0]);
           }
@@ -346,8 +373,9 @@ const App: React.FC = () => {
           clearTimeout(geoTimeout);
           console.error('[App] Geolocation error:', error);
           locationFoundRef.current = true;
-          setLocationError('Unable to determine location');
-          setLocationName('Location unavailable');
+          const defaultCity = getSelectedCity() || TARGET_CITIES[0];
+          setLocationName(defaultCity);
+          applyFallbackLocation(defaultCity);
           // Default to first target city
           if (!getSelectedCity()) {
             handleCitySelection(TARGET_CITIES[0]);
@@ -571,10 +599,13 @@ const App: React.FC = () => {
                     onVenueSelect={setSelectedVenue}
                     userLocation={userLocation}
                     mapState={mapState}
-                    setMapState={setMapState}
+                    onMapStateChange={setMapState}
                     hasInitiallyCentered={hasInitiallyCentered}
-                    setHasInitiallyCentered={setHasInitiallyCentered}
+                    onCenterComplete={() => setHasInitiallyCentered(true)}
+                    isDarkMode={isDarkMode}
                     mapTheme={mapTheme}
+                    locationError={locationError}
+                    onRetryLocation={() => { locationFoundRef.current = false; setUserLocation(null); }}
                     onBoundsChanged={handleMapBoundsChanged}
                     onMapReady={setMapInstance}
                   />

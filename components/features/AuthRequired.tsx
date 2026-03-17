@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
+import { supabase } from '../../src/supabaseClient';
 
 interface AuthRequiredProps {
   onAuthSuccess: () => void;
@@ -18,6 +19,12 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true); // Default to true
+
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +72,121 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setErrorMsg(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/?reset=true`,
+      });
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        setForgotSuccess(true);
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Failed to send reset email');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // ── Forgot Password View ──
+  if (showForgotPassword) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-primary via-primary-dark to-primary-darker">
+        <div className="w-full max-w-md mx-4">
+          {/* Logo Section */}
+          <div className="text-center mb-8 animate-in fade-in zoom-in-95 duration-700">
+            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner border border-white/30">
+              <i className="fa-solid fa-lock-open text-4xl text-white drop-shadow-md"></i>
+            </div>
+            <h1 className="text-3xl font-black tracking-wider text-white uppercase drop-shadow-sm">
+              Kunajoto
+            </h1>
+            <p className="text-white/90 font-medium tracking-wide text-sm uppercase mt-1">
+              Password Recovery
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Reset Password</h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Enter your email and we'll send you a reset link.
+              </p>
+            </div>
+
+            {errorMsg && (
+              <div className="bg-red-50 text-red-600 text-xs p-3 rounded-lg mb-4 font-medium border border-red-100 flex items-center gap-2">
+                <i className="fa-solid fa-circle-exclamation"></i>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {forgotSuccess ? (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fa-solid fa-envelope-circle-check text-3xl text-green-500"></i>
+                </div>
+                <p className="text-gray-700 font-medium mb-1">Check your inbox!</p>
+                <p className="text-gray-500 text-sm mb-6">
+                  We sent a reset link to <strong>{forgotEmail}</strong>
+                </p>
+                <button
+                  onClick={() => { setShowForgotPassword(false); setForgotSuccess(false); setErrorMsg(null); }}
+                  className="text-primary font-semibold hover:underline text-sm"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email Address</label>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {forgotLoading ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Send Reset Link</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgotPassword(false); setErrorMsg(null); }}
+                  className="w-full text-gray-500 hover:text-gray-700 text-sm font-medium py-2"
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            )}
+          </div>
+
+          <p className="text-center text-white/70 text-xs mt-6">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-primary via-primary-dark to-primary-darker">
@@ -173,17 +295,26 @@ const AuthRequired: React.FC<AuthRequiredProps> = ({ onAuthSuccess }) => {
             </div>
 
             {isLogin && (
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
-                />
-                <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600">
-                  Remember me
-                </label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+                  />
+                  <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600">
+                    Remember me
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgotPassword(true); setForgotEmail(email); setErrorMsg(null); }}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
               </div>
             )}
 
