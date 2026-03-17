@@ -118,7 +118,12 @@ const App: React.FC = () => {
     const splashTimer = setTimeout(async () => {
       console.log('[App] Splash timer completed, checking authentication...');
       try {
-        const session = await authService.getSession();
+        // Race the auth check against a 5-second timeout so the splash never hangs
+        const sessionPromise = authService.getSession();
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => { console.warn('[App] Auth check timed out, defaulting to AUTH_REQUIRED'); resolve(null); }, 5000)
+        );
+        const session = await Promise.race([sessionPromise, timeoutPromise]);
         console.log('[App] Session check result:', session ? 'Authenticated' : 'Not authenticated');
         if (session) {
           // User is authenticated, go to main app
