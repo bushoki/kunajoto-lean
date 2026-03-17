@@ -96,6 +96,7 @@ const App: React.FC = () => {
   // Itinerary State
   const [itineraries, setItineraries] = useState<any[]>([]);
   const [activeItineraryId, setActiveItineraryId] = useState<string | null>(null);
+  const [bubblesMinimized, setBubblesMinimized] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [subscribeTargetItinerary, setSubscribeTargetItinerary] = useState<any | null>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
@@ -619,6 +620,8 @@ const App: React.FC = () => {
                       onSubscribeClick={(itin) => { setSubscribeTargetItinerary(itin); setShowSubscribeModal(true); }}
                       isLoading={false}
                       userHasPrefs={false}
+                      bubblesMinimized={bubblesMinimized}
+                      onToggleBubbles={() => setBubblesMinimized(prev => !prev)}
                     />
                   )}
                   {/* Itinerary Layer — draws routes on the Google Map */}
@@ -629,6 +632,7 @@ const App: React.FC = () => {
                       activeItineraryId={activeItineraryId}
                       onItinerarySelect={setActiveItineraryId}
                       onSubscribeClick={(itin) => { setSubscribeTargetItinerary(itin); setShowSubscribeModal(true); }}
+                      bubblesMinimized={bubblesMinimized}
                     />
                   )}
                 </>

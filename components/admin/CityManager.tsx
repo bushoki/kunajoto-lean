@@ -2,8 +2,15 @@
  * CityManager — Admin Dashboard
  * Allows admins to add, hide, and delete cities available in the app.
  * Cities are stored in the `cities` table and fetched dynamically across the app.
+ *
+ * Also includes Venue Vibe Score Override section:
+ * - Lists all venues for a selected city
+ * - Allows admin to manually override the computed vibe_score for each venue
+ * - Override is stored in venues.vibe_score_override (nullable numeric 0.0–10.0)
+ * - When set, the override takes precedence over the computed vibe_score in the app
+ * - Clear button sets override back to NULL (reverts to computed score)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../src/supabaseClient';
 
 interface City {
@@ -13,6 +20,15 @@ interface City {
   is_active: boolean;
   display_order: number;
   created_at: string;
+}
+
+interface VenueWithScore {
+  id: string;
+  name: string;
+  type: string;
+  district: string;
+  vibe_score: number | null;
+  vibe_score_override: number | null;
 }
 
 export default function CityManager() {
@@ -30,10 +46,31 @@ export default function CityManager() {
   const [newCityCountry, setNewCityCountry] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
+  // Venue Vibe Score Override
+  const [selectedCityForVibe, setSelectedCityForVibe] = useState<string>('');
+  const [venues, setVenues] = useState<VenueWithScore[]>([]);
+  const [venuesLoading, setVenuesLoading] = useState(false);
+  const [editingOverrides, setEditingOverrides] = useState<Record<string, string>>({});
+  const [savingVenueId, setSavingVenueId] = useState<string | null>(null);
+
   useEffect(() => {
     loadCities();
     loadFeatureFlags();
   }, []);
+
+  // Auto-select first city for vibe score panel once cities load
+  useEffect(() => {
+    if (cities.length > 0 && !selectedCityForVibe) {
+      setSelectedCityForVibe(cities[0].name);
+    }
+  }, [cities, selectedCityForVibe]);
+
+  // Load venues when city selection changes
+  useEffect(() => {
+    if (selectedCityForVibe) {
+      loadVenuesForCity(selectedCityForVibe);
+    }
+  }, [selectedCityForVibe]);
 
   const loadFeatureFlags = async () => {
     try {
@@ -80,6 +117,81 @@ export default function CityManager() {
       setError('Failed to load cities: ' + e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadVenuesForCity = async (cityName: string) => {
+    setVenuesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('venues')
+        .select('id, name, type, district, vibe_score, vibe_score_override')
+        .eq('city', cityName)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      setVenues(data || []);
+      // Initialize editing state with current override values
+      const overrideMap: Record<string, string> = {};
+      (data || []).forEach((v: VenueWithScore) => {
+        overrideMap[v.id] = v.vibe_score_override !== null ? String(v.vibe_score_override) : '';
+      });
+      setEditingOverrides(overrideMap);
+    } catch (e: any) {
+      showMsg('Failed to load venues: ' + e.message, true);
+    } finally {
+      setVenuesLoading(false);
+    }
+  };
+
+  const saveVibeOverride = async (venueId: string) => {
+    const rawValue = editingOverrides[venueId];
+    const parsed = rawValue === '' ? null : parseFloat(rawValue);
+
+    if (parsed !== null && (isNaN(parsed) || parsed < 0 || parsed > 10)) {
+      showMsg('Score must be between 0.0 and 10.0', true);
+      return;
+    }
+
+    setSavingVenueId(venueId);
+    try {
+      const { error } = await supabase
+        .from('venues')
+        .update({ vibe_score_override: parsed })
+        .eq('id', venueId);
+      if (error) throw error;
+
+      // Update local state
+      setVenues(prev => prev.map(v =>
+        v.id === venueId ? { ...v, vibe_score_override: parsed } : v
+      ));
+      showMsg(parsed !== null
+        ? `✓ Override set to ${parsed.toFixed(1)}`
+        : '✓ Override cleared — using computed score'
+      );
+    } catch (e: any) {
+      showMsg('Failed to save override: ' + e.message, true);
+    } finally {
+      setSavingVenueId(null);
+    }
+  };
+
+  const clearVibeOverride = async (venueId: string) => {
+    setEditingOverrides(prev => ({ ...prev, [venueId]: '' }));
+    setSavingVenueId(venueId);
+    try {
+      const { error } = await supabase
+        .from('venues')
+        .update({ vibe_score_override: null })
+        .eq('id', venueId);
+      if (error) throw error;
+      setVenues(prev => prev.map(v =>
+        v.id === venueId ? { ...v, vibe_score_override: null } : v
+      ));
+      showMsg('✓ Override cleared — using computed score');
+    } catch (e: any) {
+      showMsg('Failed to clear override: ' + e.message, true);
+    } finally {
+      setSavingVenueId(null);
     }
   };
 
@@ -257,6 +369,128 @@ export default function CityManager() {
             />
           </button>
         </div>
+      </div>
+
+      {/* ── Venue Vibe Score Override ─────────────────────────────────────────── */}
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              <i className="fa-solid fa-sliders text-primary"></i>
+              Venue Vibe Score Override
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Manually override the computed vibe score for any venue. When set, the override
+              takes precedence over the system-calculated score. Leave blank to use the computed score.
+            </p>
+          </div>
+          <button
+            onClick={() => selectedCityForVibe && loadVenuesForCity(selectedCityForVibe)}
+            title="Refresh venues"
+            className="ml-3 text-gray-400 hover:text-primary transition text-sm"
+          >
+            <i className="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        {/* City filter for venue list */}
+        <div className="mt-4 mb-4">
+          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Filter by City</label>
+          <select
+            value={selectedCityForVibe}
+            onChange={(e) => setSelectedCityForVibe(e.target.value)}
+            className="w-full md:w-64 bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+          >
+            {cities.map(city => (
+              <option key={city.id} value={city.name}>{city.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Venue list */}
+        {venuesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-b-4 border-primary"></div>
+          </div>
+        ) : venues.length === 0 ? (
+          <p className="text-sm text-gray-400 italic text-center py-6">
+            No venues found for {selectedCityForVibe || 'this city'}
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+            {venues.map(venue => {
+              const hasOverride = venue.vibe_score_override !== null;
+              const isSaving = savingVenueId === venue.id;
+              const editValue = editingOverrides[venue.id] ?? '';
+              const effectiveScore = hasOverride ? venue.vibe_score_override! : (venue.vibe_score ?? 0);
+
+              return (
+                <div
+                  key={venue.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition ${
+                    hasOverride ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
+                  }`}
+                >
+                  {/* Venue info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{venue.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {venue.type} · {venue.district || 'No district'}
+                    </p>
+                  </div>
+
+                  {/* Current effective score badge */}
+                  <div className="flex flex-col items-center min-w-[52px]">
+                    <span
+                      className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                        hasOverride
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {effectiveScore.toFixed(1)}
+                    </span>
+                    <span className="text-[9px] text-gray-400 mt-0.5">
+                      {hasOverride ? 'override' : 'computed'}
+                    </span>
+                  </div>
+
+                  {/* Override input */}
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={editValue}
+                      onChange={(e) => setEditingOverrides(prev => ({ ...prev, [venue.id]: e.target.value }))}
+                      placeholder={String(venue.vibe_score ?? '—')}
+                      className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                    />
+                    <button
+                      onClick={() => saveVibeOverride(venue.id)}
+                      disabled={isSaving || editValue === (hasOverride ? String(venue.vibe_score_override) : '')}
+                      title="Save override"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition disabled:opacity-40"
+                    >
+                      {isSaving ? <i className="fa-solid fa-circle-notch fa-spin text-[10px]"></i> : <i className="fa-solid fa-check text-[10px]"></i>}
+                    </button>
+                    {hasOverride && (
+                      <button
+                        onClick={() => clearVibeOverride(venue.id)}
+                        disabled={isSaving}
+                        title="Clear override (revert to computed)"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 text-xs hover:bg-red-50 hover:text-red-500 transition disabled:opacity-40"
+                      >
+                        <i className="fa-solid fa-xmark text-[10px]"></i>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Cities List */}

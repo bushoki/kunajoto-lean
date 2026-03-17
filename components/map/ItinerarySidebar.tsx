@@ -2,6 +2,7 @@
  * ItinerarySidebar.tsx
  * Left-side panel on the map showing available itineraries for the current city.
  * Shows match score badges, free/paid labels, and lets users select/deselect routes.
+ * Includes a bubble minimize toggle to hide/show stop info bubbles on the map.
  * Branch: map-features
  */
 
@@ -15,6 +16,8 @@ interface ItinerarySidebarProps {
   onSubscribeClick: (itin: Itinerary) => void;
   isLoading: boolean;
   userHasPrefs: boolean;
+  bubblesMinimized: boolean;
+  onToggleBubbles: () => void;
 }
 
 const ItinerarySidebar: React.FC<ItinerarySidebarProps> = ({
@@ -24,6 +27,8 @@ const ItinerarySidebar: React.FC<ItinerarySidebarProps> = ({
   onSubscribeClick,
   isLoading,
   userHasPrefs,
+  bubblesMinimized,
+  onToggleBubbles,
 }) => {
   if (isLoading) {
     return (
@@ -39,6 +44,19 @@ const ItinerarySidebar: React.FC<ItinerarySidebarProps> = ({
 
   return (
     <div className="absolute top-16 left-3 z-[300] flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
+      {/* Bubble minimize toggle — shown when an itinerary is active */}
+      {activeItineraryId && (
+        <button
+          onClick={onToggleBubbles}
+          title={bubblesMinimized ? 'Show stop info labels' : 'Hide stop info labels'}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-gray-200 bg-white shadow text-gray-600 text-[10px] font-bold hover:bg-gray-50 active:scale-95 transition-all duration-200 self-start"
+          style={{ minWidth: 120 }}
+        >
+          <i className={`fa-solid ${bubblesMinimized ? 'fa-eye' : 'fa-eye-slash'} text-[10px]`}></i>
+          {bubblesMinimized ? 'Show Labels' : 'Hide Labels'}
+        </button>
+      )}
+
       {itineraries.map((itin, idx) => {
         const isActive = activeItineraryId === itin.id;
         const color = itin.color || '#FF6B35';

@@ -2,10 +2,11 @@
  * ItineraryLayer.tsx
  * Renders city itineraries as curved routes with stop bubbles on the Google Map.
  * Supports free (fully visible) and paid (locked stops) itineraries.
+ * Supports bubblesMinimized prop to hide/show stop info bubbles without removing dots.
  * Branch: map-features
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, MutableRefObject } from 'react';
 import { Itinerary, ItineraryStop } from '../../services/itineraryService';
 
 declare var google: any;
@@ -16,6 +17,7 @@ interface ItineraryLayerProps {
   activeItineraryId: string | null;
   onItinerarySelect: (id: string | null) => void;
   onSubscribeClick: (itinerary: Itinerary) => void;
+  bubblesMinimized?: boolean; // When true, hide info bubbles but keep route dots visible
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,10 +69,13 @@ const ItineraryLayer: React.FC<ItineraryLayerProps> = ({
   activeItineraryId,
   onItinerarySelect,
   onSubscribeClick,
+  bubblesMinimized = false,
 }) => {
   const overlaysRef = useRef<any[]>([]);
   const polylinesRef = useRef<any[]>([]);
   const markersRef = useRef<any[]>([]);
+  // Track bubble DOM elements so we can show/hide without full re-render
+  const bubbleElemsRef = useRef<HTMLElement[]>([]);
 
   const clearAll = useCallback(() => {
     overlaysRef.current.forEach(o => o.setMap(null));
@@ -79,11 +84,20 @@ const ItineraryLayer: React.FC<ItineraryLayerProps> = ({
     polylinesRef.current = [];
     markersRef.current.forEach(m => m.setMap(null));
     markersRef.current = [];
+    bubbleElemsRef.current = [];
   }, []);
+
+  // ── Effect: toggle bubble visibility instantly without re-rendering overlays ──
+  useEffect(() => {
+    bubbleElemsRef.current.forEach(el => {
+      el.style.display = bubblesMinimized ? 'none' : 'block';
+    });
+  }, [bubblesMinimized]);
 
   useEffect(() => {
     if (!map || !google) return;
     clearAll();
+    bubbleElemsRef.current = [];
 
     itineraries.forEach((itin) => {
       const isActive = activeItineraryId === itin.id || activeItineraryId === null;
@@ -198,7 +212,10 @@ const ItineraryLayer: React.FC<ItineraryLayerProps> = ({
           border: 1.5px solid ${color}40;
           transform: translateX(-50%) translateY(-110%);
           pointer-events: auto;
+          display: ${bubblesMinimized ? 'none' : 'block'};
         `;
+        // Register bubble for show/hide toggling
+        bubbleElemsRef.current.push(bubbleDiv);
 
         if (isLocked) {
           // Locked / subscribe to unlock bubble
