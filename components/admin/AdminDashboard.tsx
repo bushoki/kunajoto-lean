@@ -8,9 +8,10 @@ import { supabase } from '../../src/supabaseClient';
 import { isUserAppAdmin } from '../../services/adminContentService';
 import LinkAnalyticsManager from './LinkAnalyticsManager';
 import ItineraryManager from './ItineraryManager';
+import CityManager from './CityManager';
 
-// Target cities
-const TARGET_CITIES = [
+// Fallback cities (used if DB is unavailable)
+const FALLBACK_CITIES = [
   'London',
   'Johannesburg',
   'Cape Town',
@@ -20,7 +21,9 @@ const TARGET_CITIES = [
   'Nairobi',
   'Kinshasa',
   'Zanzibar',
-  'Kuala Lumpur'
+  'Kuala Lumpur',
+  'Accra',
+  'Mombasa'
 ];
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -30,7 +33,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'city_media' | 'analytics' | 'itineraries';
+type ContentType = 'events' | 'arrival_tips' | 'stay_recommendations' | 'tour_guides' | 'party_hosts' | 'accommodations' | 'travel_services' | 'vibe_scores' | 'city_media' | 'analytics' | 'itineraries' | 'cities';
 
 const CONTENT_TYPES = [
   { id: 'events', label: 'Events of the Month', icon: 'fa-calendar-days' },
@@ -43,18 +46,39 @@ const CONTENT_TYPES = [
   { id: 'vibe_scores', label: 'City Vibe Scores', icon: 'fa-chart-line' },
   { id: 'city_media', label: 'City Media Content', icon: 'fa-photo-film' },
   { id: 'analytics', label: 'Link Analytics', icon: 'fa-chart-bar' },
-  { id: 'itineraries', label: 'City Itineraries', icon: 'fa-route' }
+  { id: 'itineraries', label: 'City Itineraries', icon: 'fa-route' },
+  { id: 'cities', label: 'City Management', icon: 'fa-city' }
 ];
 
 export default function AdminDashboard({ userId, onClose }: AdminDashboardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedContent, setSelectedContent] = useState<ContentType>('events');
-  const [selectedCity, setSelectedCity] = useState<string>(TARGET_CITIES[0]);
+  const [availableCities, setAvailableCities] = useState<string[]>(FALLBACK_CITIES);
+  const [selectedCity, setSelectedCity] = useState<string>(FALLBACK_CITIES[0]);
 
   useEffect(() => {
     checkAdminStatus();
+    loadCities();
   }, [userId]);
+
+  const loadCities = async () => {
+    try {
+      const { data } = await supabase
+        .from('cities')
+        .select('name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('name', { ascending: true });
+      if (data && data.length > 0) {
+        const names = data.map((c: any) => c.name);
+        setAvailableCities(names);
+        setSelectedCity(names[0]);
+      }
+    } catch {
+      // Keep fallback cities
+    }
+  };
 
   const checkAdminStatus = async () => {
     console.log('🔐 [AdminDashboard] Checking admin status for userId:', userId);
@@ -140,6 +164,8 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
         return <LinkAnalyticsManager city={selectedCity} userId={userId} />;
       case 'itineraries':
         return <ItineraryManager adminUserId={userId} />;
+      case 'cities':
+        return <CityManager />;
       default:
         return <div>Select a content type</div>;
     }
@@ -175,7 +201,7 @@ export default function AdminDashboard({ userId, onClose }: AdminDashboardProps)
             onChange={(e) => setSelectedCity(e.target.value)}
             className="w-full md:w-64 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-medium"
           >
-            {TARGET_CITIES.map((city) => (
+            {availableCities.map((city) => (
               <option key={city} value={city}>
                 {city}
               </option>

@@ -10,9 +10,10 @@ import { trackAndOpenLink } from '../../services/linkTrackingService';
 import { linkify } from '../../utils/linkify';
 import { getCityMedia, CityMedia } from '../../services/cityMediaService';
 import CityMediaDisplay from './CityMediaDisplay';
+import ItineraryExplorer from './ItineraryExplorer';
 
-// Target cities
-const TARGET_CITIES = [
+// Fallback cities (used if DB is unavailable)
+const FALLBACK_CITIES = [
   'London',
   'Johannesburg',
   'Cape Town',
@@ -22,7 +23,9 @@ const TARGET_CITIES = [
   'Nairobi',
   'Kinshasa',
   'Zanzibar',
-  'Kuala Lumpur'
+  'Kuala Lumpur',
+  'Accra',
+  'Mombasa'
 ];
 
 interface ExploreTabProps {
@@ -61,6 +64,7 @@ export default function ExploreTab({
   const [loadingDynamic, setLoadingDynamic] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [cityMedia, setCityMedia] = useState<CityMedia[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>(FALLBACK_CITIES);
 
   // Get current user ID
   useEffect(() => {
@@ -69,7 +73,24 @@ export default function ExploreTab({
       setUserId(user?.id || null);
     };
     getCurrentUser();
+    loadAvailableCities();
   }, []);
+
+  const loadAvailableCities = async () => {
+    try {
+      const { data } = await supabase
+        .from('cities')
+        .select('name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('name', { ascending: true });
+      if (data && data.length > 0) {
+        setAvailableCities(data.map((c: any) => c.name));
+      }
+    } catch {
+      // Keep fallback cities
+    }
+  };
 
   // Load content when city changes
   useEffect(() => {
@@ -193,14 +214,14 @@ export default function ExploreTab({
               Welcome to Kunajoto! 🌍
             </h2>
             <p className="text-gray-600 text-lg">
-              {locationName && !TARGET_CITIES.includes(locationName)
+              {locationName && !availableCities.includes(locationName)
                 ? `We're not yet available in ${locationName}. Select a city to explore:`
                 : 'Select a city to explore:'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {TARGET_CITIES.map(city => (
+            {availableCities.map(city => (
               <button
                 key={city}
                 onClick={() => handleCitySelect(city)}
@@ -387,6 +408,14 @@ export default function ExploreTab({
             )}
           </section>
         )}
+
+        {/* City Itinerary Explorer — admin-controlled section below four-square menu */}
+        <ItineraryExplorer
+          city={selectedCity}
+          userId={userId}
+          isAuthenticated={isAuthenticated}
+          onRequestAuth={onOpenPreferences}
+        />
       </div>
     </div>
   );
